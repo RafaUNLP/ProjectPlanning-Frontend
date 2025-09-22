@@ -9,7 +9,21 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Vuetify-specific settings */
+    "moduleResolution": "node",         // Ensure node-style module resolution is used
+    "esModuleInterop": true,             // Ensures compatibility with CommonJS modules (important for Vuetify)
+    "skipLibCheck": true,                // Skip type checking of declaration files to speed up build
+    "resolveJsonModule": true,           // Allow importing of JSON files
+    "allowSyntheticDefaultImports": true, // Allows default imports from modules that don't have a default export
+    "lib": ["esnext", "dom"],            // Include modern JS features and browser DOM types
+    "types": ["vite/client", "vuetify"]  // Add Vuetify types explicitly
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "node_modules/vuetify"               // Ensure Vuetify module is included
+  ]
 }
