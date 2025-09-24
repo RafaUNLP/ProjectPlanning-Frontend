@@ -8,16 +8,14 @@
         <v-text-field
           v-model="nombreProyecto"
           label="Nombre del proyecto"
-          outlined
           dense
         />
       </v-col>
 
       <v-col cols="12" md="6">
-        <v-text-field
+        <v-textarea
           v-model="descripcionProyecto"
           label="Descripción del proyecto"
-          outlined
           dense
         />
       </v-col>

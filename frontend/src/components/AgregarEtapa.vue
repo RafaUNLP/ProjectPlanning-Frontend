@@ -96,7 +96,7 @@ export default defineComponent({
       fechaInicio: null as string | null,
       fechaFin: null as string | null,
       opcionesColaboracion: ["Económica", "Materiales", "Mano de Obra", "Otra"],
-      opcionesElegidas: [] as string[],
+      opcionesElegidas: ["Económica"] as string[],
       descripcionColaboraciones: "",
     };
   },
