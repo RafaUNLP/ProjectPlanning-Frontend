@@ -1,11 +1,9 @@
 <template>
-  <v-container class="pa-4" outlined>
-    <v-row class="align-center mb-4">
-      <v-col cols="6">
-        <h2 class="text-h6 text-md-h5">Etapa {{ index + 1 }}</h2>
-      </v-col>
-      <v-col cols="6" class="d-flex justify-end">
-        <v-btn color="error" variant="tonal" @click="eliminarEtapa">
+  <v-container cols="12" md="6" outlined>
+    <v-row class="mb-1">
+      <v-col cols="12" class="d-flex justify-start align-center">
+        <h2 class="mr-2">Etapa {{ index + 1 }}</h2>
+        <v-btn class="ml-auto" color="error" variant="tonal" @click="eliminarEtapa">
           Eliminar
         </v-btn>
       </v-col>

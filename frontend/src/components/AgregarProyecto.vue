@@ -1,5 +1,6 @@
 <template>
   <v-container fluid>
+  
     <h1 class="text-h5 text-md-h4 mb-4">Agregar un Proyecto</h1>
 
     <!-- Datos del proyecto -->
@@ -29,19 +30,29 @@
           :key="index"
           class="mb-4"
         >
-          <AgregarEtapa :index="index" @eliminar="eliminarEtapa(index)" />
+        <AgregarEtapa :index="index" @eliminar="eliminarEtapa(index)" />
         </div>
       </v-col>
     </v-row>
 
     <!-- Botón agregar etapa -->
-    <v-row>
+    <v-row class="mb-2">
       <v-col cols="12">
         <v-btn color="primary" @click="agregarEtapa">
           Agregar Etapa
         </v-btn>
       </v-col>
     </v-row>
+
+    <!-- Botón Enviar -->
+    <v-row>
+      <v-col cols="12">
+        <v-btn class="mt-4" @click="agregarProyecto">
+          Enviar
+        </v-btn>
+      </v-col>
+    </v-row>
+  
   </v-container>
 </template>
 
@@ -65,6 +76,9 @@ export default defineComponent({
     eliminarEtapa(index: number) {
       this.etapas.splice(index, 1)
     },
+    async agregarProyecto(){
+      alert('YUPI');
+    }
   },
 })
 </script>
