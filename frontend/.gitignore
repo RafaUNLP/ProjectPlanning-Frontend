@@ -16,6 +16,7 @@ dist-ssr
 
 # Editor directories and files
 .vscode/*
+!.vscode/extensions.json 
 .idea
 .DS_Store
 *.suo
@@ -23,3 +24,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# Archivos de publicación y cache
+*.user
+*.userosscache
+*.sln.docstates
+
+# Directorios de artefactos de build
+backend/bin/
+backend/obj/
+**/out/
+
+# Archivos de configuración local
+appsettings.Development.json   # suele contener credenciales locales
+secrets.json
+.env
