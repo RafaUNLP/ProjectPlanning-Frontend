@@ -8,7 +8,7 @@ namespace backend.Models;
 public class Etapa{
     [Key]
     public Guid Id { get; set; }
-    public required Guid ProyectoId { get; set; }
+    public Guid ProyectoId { get; set; }
     public required string Nombre { get; set; }
     public required string Descripcion { get; set; }
     [Column(TypeName = "timestamp")] public required DateTime FechaInicio { get; set; }

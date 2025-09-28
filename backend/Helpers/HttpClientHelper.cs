@@ -38,7 +38,7 @@ public static class HttpClientHelper
                         break;
                     case "PUT":
                         json = JsonContent.Create(body);
-                        result = await _httpClient.PostAsync(url, json);
+                        result = await _httpClient.PutAsync(url, json);
                         break;
                 }
                 
