@@ -53,6 +53,29 @@ if (app.Environment.IsDevelopment())
 //app.UseHttpsRedirection();
 app.MapControllers();
 
+
+
+var access = new Access();
+
+// 1. Login
+bool logged = await access.LoginAsync("walter.bates", "bpm");
+
+if (logged)
+{
+    Console.WriteLine("✅ Login exitoso.");
+
+    // 2. Probar con un endpoint
+    // string result = await access.GetAsync("API/system/session/unusedId");
+    // Console.WriteLine("Respuesta de Bonita:");
+    // Console.WriteLine(result);
+}
+else
+{
+    Console.WriteLine("❌ Error al loguear en Bonita.");
+}
+
+
+
 app.Run();
 
 
