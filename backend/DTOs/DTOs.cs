@@ -2,6 +2,7 @@ using System.Net;
 using backend.Models;
 using System.ComponentModel.DataAnnotations;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Text.Json.Serialization;
 
 namespace backend.DTOs;
 
@@ -84,4 +85,54 @@ public class EtapaDTO
     /// Descripción adicional sobre la colaboración.
     /// </summary>
     public string? DescripcionColaboracion { get; set; }
+}
+
+public class BonitaProcessResponse
+{
+    public string id { get; set; }
+    public string name { get; set; }
+    public string version { get; set; }
+}
+
+public class BonitaCaseResponse
+{
+    public long caseId { get; set; }
+}
+
+public enum ActivityStateEnum
+{
+    [JsonPropertyName("failed")] Failed,
+    [JsonPropertyName("initializing")] Initializing,
+    [JsonPropertyName("ready")] Ready,
+    [JsonPropertyName("executing")] Executing,
+    [JsonPropertyName("completing")] Completing,
+    [JsonPropertyName("completed")] Completed,
+    [JsonPropertyName("waiting")] Waiting,
+    [JsonPropertyName("skipped")] Skipped,
+    [JsonPropertyName("cancelled")] Cancelled,
+    [JsonPropertyName("aborted")] Aborted,
+    [JsonPropertyName("cancelling subtasks")] CancellingSubtasks,
+    [JsonPropertyName("aborting activity with boundary")] AbortingWithBoundary,
+    [JsonPropertyName("completing activity with boundary")] CompletingWithBoundary
+}
+
+public class BonitaActivityResponse
+{
+    public string id { get; set; }
+    public string name { get; set; }
+    // public ActivityStateEnum state { get; set; }
+    public string type { get; set; }
+    public string priority { get; set; }
+    public string actorId { get; set; }
+
+}
+
+public class BonitaUserResponse
+{
+    public string id { get; set; }
+    public string userName { get; set; }
+    public string firstName { get; set; }
+    public string lastName { get; set; }
+
+    public string enabled { get; set; }
 }

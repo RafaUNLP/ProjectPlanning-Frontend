@@ -2,6 +2,7 @@ using System.Reflection;
 using backend.Data;
 using backend.Repositories;
 using Microsoft.EntityFrameworkCore;
+using backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,21 +59,22 @@ app.MapControllers();
 var access = new Access();
 
 // 1. Login
-bool logged = await access.LoginAsync("walter.bates", "bpm");
+RequestHelper rh = await access.LoginAsync("walter.bates", "bpm");
 
-if (logged)
-{
-    Console.WriteLine("✅ Login exitoso.");
+BonitaService bonitaService = new BonitaService(rh);
 
-    // 2. Probar con un endpoint
-    // string result = await access.GetAsync("API/system/session/unusedId");
-    // Console.WriteLine("Respuesta de Bonita:");
-    // Console.WriteLine(result);
-}
-else
-{
-    Console.WriteLine("❌ Error al loguear en Bonita.");
-}
+var id = await bonitaService.GetProcessIdByName("Prueba1");
+var caseId = await bonitaService.StartProcessById(id);
+var suc = await bonitaService.SetVariableByCase(caseId.ToString(), "var1", "valor1", "java.lang.String");
+Console.WriteLine($"Put exitoso?:{suc} ");
+await bonitaService.SetVariableByCase(caseId.ToString(), "var2", "valor2", "java.lang.String");
+var activity = await bonitaService.GetActivityByCaseId(caseId.ToString());
+Console.WriteLine($"Actividad: {activity}" );
+//hay que asignar un usuario a la actividad para completarla
+var userId = await bonitaService.GetUserIdByUserName("walter.bates");
+await bonitaService.AssignActivityToUser(activity.id, userId);
+await bonitaService.CompleteActivityAsync(activity.id);
+
 
 
 

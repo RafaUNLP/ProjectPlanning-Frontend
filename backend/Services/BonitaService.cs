@@ -1,5 +1,11 @@
 using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.ResponseCompression;
+using backend.DTOs;
+
+namespace backend.Services;
 
 public class BonitaService
 {
@@ -10,63 +16,85 @@ public class BonitaService
         _request = request;
     }
 
-    public async Task<string> GetAllProcessesAsync()
+    // public async Task<string> GetAllProcessesAsync()
+    // {
+    //     return await _request.DoRequestAsync(HttpMethod.Get, "API/bpm/process?p=0&c=1000");
+    // }
+
+    // public async Task<string> GetTasksAsync()
+    // {
+    //     return await _request.DoRequestAsync(HttpMethod.Get, "API/bpm/humanTask?p=0&c=50");
+    // }
+
+
+    // public async Task<string> GetProcessNameById(string processId)
+    // {
+    //     return await _request.DoRequestAsync(HttpMethod.Get, $"API/bpm/process/{processId}");
+    // }
+
+    public async Task<string?> GetProcessIdByName(string processName)
     {
-        return await _request.DoRequestAsync(HttpMethod.Get, "API/bpm/process?p=0&c=1000");
+        var response = await _request.DoRequestAsync<List<BonitaProcessResponse>>(HttpMethod.Get, $"API/bpm/process?f=name={processName}");
+
+        return response?.FirstOrDefault()?.id;
+
     }
 
-    public async Task<string> GetTasksAsync()
-    {
-        return await _request.DoRequestAsync(HttpMethod.Get, "API/bpm/humanTask?p=0&c=50");
-    }
+    // public async Task<Dictionary<string, string>> GetProcessCountAsync()
+    // {
+    //     return await _request.DoRequestAsync(HttpMethod.Get, "API/bpm/process/count");
 
-
-    public async Task<string> GetProcessNameById(string processId)
-    {
-        return await _request.DoRequestAsync(HttpMethod.Get, $"API/bpm/process/{processId}");
-    }
-
-    public async Task<string> GetProcessIdByName(string processName)
-    {
-        return await _request.DoRequestAsync(HttpMethod.Get, $"API/bpm/process?f=name={processName}");
-    }
-
-    public async Task<string> GetProcessCountAsync()
-    {
-        return await _request.DoRequestAsync(HttpMethod.Get, "API/bpm/process/count");
-
-    }
+    // }
 
     //Initiate process by id
-    public async Task<string> StartProcessById(string processId)
+    public async Task<long> StartProcessById(string processId)
     {
-        return await _request.DoRequestAsync(HttpMethod.Post, $"API/bpm/process/{processId}/instantiation");
+        var response = await _request.DoRequestAsync<BonitaCaseResponse>(HttpMethod.Post, $"API/bpm/process/{processId}/instantiation");
+
+
+        return response.caseId;
     }
 
-    public async Task<string> SetVariableByCase(string caseId, string variable, string value, string varType)
+    /// <summary>
+    /// Actualiza el valor de una variable de proceso en un caso específico.
+    /// </summary>
+    /// <param name="caseId">Identificador del caso en Bonita</param>
+    /// <param name="variableName">Nombre de la variable de proceso a actualizar</param>
+    /// <param name="value">Nuevo valor a asignar a la variable</param>
+    /// <param name="varType">
+    /// Tipo de dato de la variable en Bonita 
+    /// (por ejemplo: "java.lang.String", "java.lang.Integer", "java.lang.Boolean").
+    /// </param>
+    /// <returns>200: Respuesta vacia</returns>
+    public async Task<bool> SetVariableByCase(string caseId, string variableName, string value, string varType)
     {
-        var content = new FormUrlEncodedContent(new[]
+        var payload = new
         {
-            new KeyValuePair<string,string>("name", variable),
-            new KeyValuePair<string,string>("value", value),
-            new KeyValuePair<string,string>("type", varType)
-        });
+            value = value,
+            type = varType
+        };
 
-        return await _request.DoRequestAsync(HttpMethod.Put, $"API/bpm/case/{caseId}/variable/{variable}", content);
+        var content = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        return await _request.DoRequestAsync<object>(HttpMethod.Put, $"API/bpm/caseVariable/{caseId}/{variableName}", content) == null;
     }
 
-    public async Task<string> AssignTaskToUser(string taskId, string userId)
-    {
-        var content = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string,string>("assigned_id", userId)
-        });
-        return await _request.DoRequestAsync(HttpMethod.Put, $"API/bpm/userTask/{taskId}", content);
-    }
+    // public async Task<string> AssignTaskToUser(string taskId, string userId)
+    // {
+    //     var content = new FormUrlEncodedContent(new[]
+    //     {
+    //         new KeyValuePair<string,string>("assigned_id", userId)
+    //     });
+    //     return await _request.DoRequestAsync(HttpMethod.Put, $"API/bpm/userTask/{taskId}", content);
+    // }
 
-    public async Task<string> CompleteActivityAsync(string taskId)
+    public async Task<bool> CompleteActivityAsync(string taskId)
     {
-        return await _request.DoRequestAsync(HttpMethod.Post, $"API/bpm/userTask/{taskId}/execution");
+        return await _request.DoRequestAsync<object>(HttpMethod.Post, $"API/bpm/userTask/{taskId}/execution") == null;
     }
 
 
@@ -85,6 +113,30 @@ public class BonitaService
     //     return variableResponse;
     // }
 
+    public async Task<BonitaActivityResponse?> GetActivityByCaseId(string caseId)
+    {
+        var response = await _request.DoRequestAsync<List<BonitaActivityResponse>>(HttpMethod.Get, $"API/bpm/task?f=caseId={caseId}");
+        return response?.FirstOrDefault();
+    }
 
+    public async Task<string> GetUserIdByUserName(string userName)
+    {
+        var response = await _request.DoRequestAsync<List<BonitaUserResponse>>(HttpMethod.Get, $"API/identity/user?f=displayName={userName}");
+        return response?.FirstOrDefault()?.id;
+    }
+    
+    public async Task<bool> AssignActivityToUser(string taskId, string userId)
+    {
+        var payload = new
+        {
+            assigned_id = userId
+        };
 
+        var content = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json"
+        );
+        return await _request.DoRequestAsync<object>(HttpMethod.Put, $"API/bpm/userTask/{taskId}", content) == null;
+    }
 }
