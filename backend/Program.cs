@@ -54,30 +54,6 @@ if (app.Environment.IsDevelopment())
 //app.UseHttpsRedirection();
 app.MapControllers();
 
-
-
-var access = new Access();
-
-// 1. Login
-RequestHelper rh = await access.LoginAsync("walter.bates", "bpm");
-
-BonitaService bonitaService = new BonitaService(rh);
-
-var id = await bonitaService.GetProcessIdByName("Prueba1");
-var caseId = await bonitaService.StartProcessById(id);
-var suc = await bonitaService.SetVariableByCase(caseId.ToString(), "var1", "valor1", "java.lang.String");
-Console.WriteLine($"Put exitoso?:{suc} ");
-await bonitaService.SetVariableByCase(caseId.ToString(), "var2", "valor2", "java.lang.String");
-var activity = await bonitaService.GetActivityByCaseId(caseId.ToString());
-Console.WriteLine($"Actividad: {activity}" );
-//hay que asignar un usuario a la actividad para completarla
-var userId = await bonitaService.GetUserIdByUserName("walter.bates");
-await bonitaService.AssignActivityToUser(activity.id, userId);
-await bonitaService.CompleteActivityAsync(activity.id);
-
-
-
-
 app.Run();
 
 
