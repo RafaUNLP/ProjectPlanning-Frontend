@@ -80,10 +80,10 @@ export default defineComponent({
   methods: {
     agregarEtapa() {
       this.etapas.push({ 
-        nombre: '', 
-        descripcion: '',
+        nombre: 'hola1', 
+        descripcion: 'unaDescripcion',
         fechaInicio: new Date(),
-        fechaFin: new Date()})
+        fechaFin: new Date("2025-10-04")})
     },
     eliminarEtapa(index: number) {
       this.etapas.splice(index, 1)
@@ -98,6 +98,9 @@ export default defineComponent({
 
         const response = await api.post('/proyecto', payload); 
         console.log('Proyecto agregado:', response.data);
+        alert('Proyecto agregado exitosamente');
+        
+        // Limpiar el formulario
 
         this.nombreProyecto = '';
         this.descripcionProyecto = '';
