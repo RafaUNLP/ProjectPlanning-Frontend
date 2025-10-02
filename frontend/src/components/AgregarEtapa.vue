@@ -12,21 +12,10 @@
     <!-- Nombre y Descripción -->
     <v-row>
       <v-col cols="12" md="6">
-        <v-text-field
-          v-model="nombre"
-          label="Nombre de la etapa"
-          outlined
-          dense
-        />
+        <v-text-field v-model="etapa.nombre" label="Nombre de la etapa" outlined dense />
       </v-col>
-
       <v-col cols="12" md="6">
-        <v-text-field
-          v-model="descripcion"
-          label="Descripción de la etapa"
-          outlined
-          dense
-        />
+        <v-text-field v-model="etapa.descripcion" label="Descripción de la etapa" outlined dense />
       </v-col>
     </v-row>
 
@@ -41,21 +30,16 @@
           min-width="auto"
         >
           <template v-slot:activator="{ props }">
-            <v-text-field
-              v-bind="props"
-              v-model="fechaInicio"
-              label="Fecha de Inicio"
-              readonly
-            />
+            <v-text-field v-bind="props" v-model="etapa.fechaInicio" label="Fecha de Inicio" readonly />
           </template>
           <v-date-picker
-            v-model="fechaInicio"
+            v-model="etapa.fechaInicio"
             :allowed-dates="soloFuturas"
-            @input="menuInicio = false"
-            ></v-date-picker>
+            @update:modelValue="menuInicio = false"
+          />
         </v-menu>
       </v-col>
-       <v-col cols="12" md="6">
+      <v-col cols="12" md="6">
         <v-menu
           v-model="menuFin"
           :close-on-content-click="false"
@@ -64,27 +48,22 @@
           min-width="auto"
         >
           <template v-slot:activator="{ props }">
-            <v-text-field
-              v-bind="props"
-              v-model="fechaFin"
-              label="Fecha de Fin"
-              readonly
-            />
+            <v-text-field v-bind="props" v-model="etapa.fechaFin" label="Fecha de Fin" readonly />
           </template>
           <v-date-picker
-            v-model="fechaFin"
+            v-model="etapa.fechaFin"
             :allowed-dates="mayorAlInicio"
-            @input="menuFin = false"
-          ></v-date-picker>
+            @update:modelValue="menuFin = false"
+          />
         </v-menu>
       </v-col>
     </v-row>
-    
+
     <!-- Colaboraciones -->
     <v-row>
       <v-col cols="12" md="6">
         <v-select
-          v-model="opcionesElegidas"
+          v-model="etapa.opcionesElegidas"
           :items="opcionesColaboracion"
           multiple
           label="Tipo de colaboración"
@@ -95,7 +74,7 @@
 
       <v-col cols="12" md="6">
         <v-textarea
-          v-model="descripcionColaboraciones"
+          v-model="etapa.descripcionColaboracion"
           label="Detalles de la colaboración"
           auto-grow
           outlined
@@ -103,53 +82,40 @@
         />
       </v-col>
     </v-row>
-
   </v-container>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue'
 
 export default defineComponent({
-  name: "AgregarEtapa",
+  name: 'AgregarEtapa',
   props: {
-    index: {
-      type: Number,
-      required: true,
-    },
+    index: { type: Number, required: true },
+    etapa: { type: Object, required: true }
   },
   data() {
     return {
-      nombre: "",
-      descripcion: "",
-      fechaInicio: new Date().toISOString().substring(0, 10),
-      fechaFin: (() => { 
-        const d = new Date();
-        d.setDate(d.getDate() + 1);
-        return d.toISOString().substring(0, 10);
-      })(),
       menuInicio: false,
       menuFin: false,
-      opcionesColaboracion: ["Económica", "Materiales", "Mano de Obra", "Otra"],
-      opcionesElegidas: ["Económica"] as string[],
-      descripcionColaboraciones: "",
-    };
+      opcionesColaboracion: ['Económica', 'Materiales', 'Mano de Obra', 'Otra']
+    }
   },
   methods: {
     eliminarEtapa() {
-      this.$emit("eliminar", this.index);
+      this.$emit('eliminar', this.index)
     },
     soloFuturas(date: unknown): boolean {
-      const seleccionada = new Date(String(date));
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-      return seleccionada >= hoy;
+      const seleccionada = new Date(String(date))
+      const hoy = new Date()
+      hoy.setHours(0, 0, 0, 0)
+      return seleccionada >= hoy
     },
     mayorAlInicio(date: unknown): boolean {
-      const seleccionada = new Date(String(date));
-      const inicio = new Date(this.fechaInicio);
-      return seleccionada > inicio;
-    },
-  },
-});
+      const seleccionada = new Date(String(date))
+      const inicio = new Date(this.etapa.fechaInicio)
+      return seleccionada > inicio
+    }
+  }
+})
 </script>

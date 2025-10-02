@@ -43,19 +43,18 @@ public class ProyectoController : ControllerBase
                     Nombre = e.Nombre,
                     Descripcion = e.Descripcion,
                     FechaInicio = e.FechaInicio.ToLocalTime(),
-                    FechaFin = e.FechaFin.ToLocalTime()
+                    FechaFin = e.FechaFin.ToLocalTime(),
+                    CategoriaColaboracion = e.CategoriaColaboracion,
+                    DescripcionColaboracion = e.DescripcionColaboracion
                 }).ToList()
             });
 
             var idProc = await _bonitaService.GetProcessIdByName("Prueba1");//recupera id del proceso
             var caseId = await _bonitaService.StartProcessById(idProc);//inicia una instancia del mismo
             var suc = await _bonitaService.SetVariableByCase(caseId.ToString(), "var1", "valor1", "java.lang.String");//le instancia variables de prueba
-            Console.WriteLine($"Put exitoso?:{suc} ");
-            await _bonitaService.SetVariableByCase(caseId.ToString(), "var2", "valor2", "java.lang.String");//le instancia variables de prueba
             var activity = await _bonitaService.GetActivityByCaseId(caseId.ToString());//recupera el id de la actividad
             Console.WriteLine($"Actividad: {activity}");
-            //hay que asignar un usuario a la actividad para completarla
-            var userId = await _bonitaService.GetUserIdByUserName("walter.bates");//recupera el id usuario en bonita
+            var userId = await _bonitaService.GetUserIdByUserName("walter.bates");//hay que asignar un usuario a la actividad para completarla, recupera el id usuario en bonita
             await _bonitaService.AssignActivityToUser(activity.id, userId);//le asigna la actividad al usuario
             bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);//completa la actividad
 
