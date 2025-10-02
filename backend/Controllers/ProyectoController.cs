@@ -3,6 +3,7 @@ using backend.Models;
 using backend.DTOs;
 using backend.Repositories;
 using backend.Services;
+using Microsoft.VisualBasic;
 
 namespace backend.Controllers;
 
@@ -12,10 +13,15 @@ public class ProyectoController : ControllerBase
 {
     private readonly ProyectoRepository _proyectoRepository;
     private readonly BonitaService _bonitaService;
-    public ProyectoController(ProyectoRepository proyectoRepository, BonitaService bonitaService)
+    public ProyectoController(ProyectoRepository proyectoRepository)
     {
         _proyectoRepository = proyectoRepository;
-        _bonitaService = bonitaService;
+        var _access = new Access();
+        var RequestHelper = _access.LoginAsync("walter.bates", "bpm").Result;
+        if (RequestHelper != null)
+        {
+            _bonitaService = new BonitaService(RequestHelper);            
+        }
     }
 
     [HttpPost]
@@ -71,15 +77,19 @@ public class ProyectoController : ControllerBase
     public async Task<IActionResult> ProbandoBonita(Guid id) {
         try
         {
-            Proyecto? buscado = null;
-
-            //acá se podría llamar al BonitaService al estilo:
-            string respuestaBonita = await _bonitaService.CrearProceso("algo",["otroAlgo","otroAlgoMas"]);
-
-            if (buscado == null)
-                return NotFound();
-
-            return Ok(buscado);
+            var idProc = await _bonitaService.GetProcessIdByName("Prueba1");
+            var caseId = await _bonitaService.StartProcessById(idProc);
+            var suc = await _bonitaService.SetVariableByCase(caseId.ToString(), "var1", "valor1", "java.lang.String");
+            Console.WriteLine($"Put exitoso?:{suc} ");
+            await _bonitaService.SetVariableByCase(caseId.ToString(), "var2", "valor2", "java.lang.String");
+            var activity = await _bonitaService.GetActivityByCaseId(caseId.ToString());
+            Console.WriteLine($"Actividad: {activity}");
+            //hay que asignar un usuario a la actividad para completarla
+            var userId = await _bonitaService.GetUserIdByUserName("walter.bates");
+            await _bonitaService.AssignActivityToUser(activity.id, userId);
+            await _bonitaService.CompleteActivityAsync(activity.id);
+            
+            return Ok(activity);
         }
         catch (Exception ex)
         {

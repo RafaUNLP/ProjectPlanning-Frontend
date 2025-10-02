@@ -2,6 +2,7 @@ using System.Reflection;
 using backend.Data;
 using backend.Repositories;
 using Microsoft.EntityFrameworkCore;
+using backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
