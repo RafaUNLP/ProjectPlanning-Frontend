@@ -47,7 +47,22 @@ public class ProyectoController : ControllerBase
                 }).ToList()
             });
 
-            return Ok(nuevo);
+            var idProc = await _bonitaService.GetProcessIdByName("Prueba1");//recupera id del proceso
+            var caseId = await _bonitaService.StartProcessById(idProc);//inicia una instancia del mismo
+            var suc = await _bonitaService.SetVariableByCase(caseId.ToString(), "var1", "valor1", "java.lang.String");//le instancia variables de prueba
+            Console.WriteLine($"Put exitoso?:{suc} ");
+            await _bonitaService.SetVariableByCase(caseId.ToString(), "var2", "valor2", "java.lang.String");//le instancia variables de prueba
+            var activity = await _bonitaService.GetActivityByCaseId(caseId.ToString());//recupera el id de la actividad
+            Console.WriteLine($"Actividad: {activity}");
+            //hay que asignar un usuario a la actividad para completarla
+            var userId = await _bonitaService.GetUserIdByUserName("walter.bates");//recupera el id usuario en bonita
+            await _bonitaService.AssignActivityToUser(activity.id, userId);//le asigna la actividad al usuario
+            bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);//completa la actividad
+
+            if (finishedActivity)
+                return Ok(nuevo);
+            else
+                return StatusCode(502,"Falló la terminación de la actividad en Bonita");
         }
         catch (Exception ex)
         {
@@ -66,30 +81,6 @@ public class ProyectoController : ControllerBase
                 return NotFound();
 
             return Ok(buscado);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex.Message);
-        }
-    }
-    
-    [HttpPost("ProbandoBonita")]
-    public async Task<IActionResult> ProbandoBonita(Guid id) {
-        try
-        {
-            var idProc = await _bonitaService.GetProcessIdByName("Prueba1");
-            var caseId = await _bonitaService.StartProcessById(idProc);
-            var suc = await _bonitaService.SetVariableByCase(caseId.ToString(), "var1", "valor1", "java.lang.String");
-            Console.WriteLine($"Put exitoso?:{suc} ");
-            await _bonitaService.SetVariableByCase(caseId.ToString(), "var2", "valor2", "java.lang.String");
-            var activity = await _bonitaService.GetActivityByCaseId(caseId.ToString());
-            Console.WriteLine($"Actividad: {activity}");
-            //hay que asignar un usuario a la actividad para completarla
-            var userId = await _bonitaService.GetUserIdByUserName("walter.bates");
-            await _bonitaService.AssignActivityToUser(activity.id, userId);
-            await _bonitaService.CompleteActivityAsync(activity.id);
-            
-            return Ok(activity);
         }
         catch (Exception ex)
         {
