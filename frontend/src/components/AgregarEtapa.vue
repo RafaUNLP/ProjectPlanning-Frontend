@@ -33,22 +33,53 @@
     <!-- Fechas -->
     <v-row>
       <v-col cols="12" md="6">
-        <v-date-input
-          label="Fecha de Inicio"
-          v-model="fechaInicio"
-          :allowed-dates="soloFuturas"
-        />
+        <v-menu
+          v-model="menuInicio"
+          :close-on-content-click="false"
+          transition="scale-transition"
+          offset-y
+          min-width="auto"
+        >
+          <template v-slot:activator="{ props }">
+            <v-text-field
+              v-bind="props"
+              v-model="fechaInicio"
+              label="Fecha de Inicio"
+              readonly
+            />
+          </template>
+          <v-date-picker
+            v-model="fechaInicio"
+            :allowed-dates="soloFuturas"
+            @input="menuInicio = false"
+            ></v-date-picker>
+        </v-menu>
       </v-col>
-
-      <v-col cols="12" md="6">
-        <v-date-input
-          label="Fecha de Fin"
-          v-model="fechaFin"
-          :allowed-dates="mayorAlInicio"
-        />
+       <v-col cols="12" md="6">
+        <v-menu
+          v-model="menuFin"
+          :close-on-content-click="false"
+          transition="scale-transition"
+          offset-y
+          min-width="auto"
+        >
+          <template v-slot:activator="{ props }">
+            <v-text-field
+              v-bind="props"
+              v-model="fechaFin"
+              label="Fecha de Fin"
+              readonly
+            />
+          </template>
+          <v-date-picker
+            v-model="fechaFin"
+            :allowed-dates="mayorAlInicio"
+            @input="menuFin = false"
+          ></v-date-picker>
+        </v-menu>
       </v-col>
     </v-row>
-
+    
     <!-- Colaboraciones -->
     <v-row>
       <v-col cols="12" md="6">
@@ -91,8 +122,10 @@ export default defineComponent({
     return {
       nombre: "",
       descripcion: "",
-      fechaInicio: null as string | null,
+      fechaInicio: new Date().toISOString().substring(0, 10),
       fechaFin: null as string | null,
+      menuInicio: false,
+      menuFin: false,
       opcionesColaboracion: ["Económica", "Materiales", "Mano de Obra", "Otra"],
       opcionesElegidas: ["Económica"] as string[],
       descripcionColaboraciones: "",
@@ -106,11 +139,13 @@ export default defineComponent({
       if (typeof date !== "string") return false;
       const seleccionada = new Date(date);
       const hoy = new Date();
+      hoy.setDate(hoy.getDate() + 1); // Permitir hoy
       hoy.setHours(0, 0, 0, 0);
       return seleccionada > hoy;
     },
     mayorAlInicio(date: unknown): boolean {
       if (typeof date !== "string" || !this.fechaInicio) return false;
+      if(!this.fechaInicio) return false;
       const seleccionada = new Date(date);
       const inicio = new Date(this.fechaInicio);
       return seleccionada > inicio;

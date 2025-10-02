@@ -59,6 +59,14 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import AgregarEtapa from './AgregarEtapa.vue'
+import api from '../api';
+
+interface Etapa {
+  nombre: string
+  descripcion: string
+  fechaInicio: Date
+  fechaFin: Date
+}
 
 export default defineComponent({
   components: { AgregarEtapa },
@@ -66,18 +74,38 @@ export default defineComponent({
     return {
       nombreProyecto: '',
       descripcionProyecto: '',
-      etapas: [] as { nombre: string; descripcion: string }[],
+      etapas: [] as Etapa[],
     }
   },
   methods: {
     agregarEtapa() {
-      this.etapas.push({ nombre: '', descripcion: '' })
+      this.etapas.push({ 
+        nombre: '', 
+        descripcion: '',
+        fechaInicio: new Date(),
+        fechaFin: new Date()})
     },
     eliminarEtapa(index: number) {
       this.etapas.splice(index, 1)
     },
     async agregarProyecto(){
-      alert('YUPI');
+      try{
+        const payload = {
+          Nombre: this.nombreProyecto,
+          Descripcion: this.descripcionProyecto,
+          Etapas: this.etapas
+        }
+
+        const response = await api.post('/proyecto', payload); 
+        console.log('Proyecto agregado:', response.data);
+
+        this.nombreProyecto = '';
+        this.descripcionProyecto = '';
+        this.etapas = [];
+      }
+      catch(error: any){
+        console.error('Error al agregar el proyecto:', error);
+      }
     }
   },
 })
