@@ -123,7 +123,11 @@ export default defineComponent({
       nombre: "",
       descripcion: "",
       fechaInicio: new Date().toISOString().substring(0, 10),
-      fechaFin: null as string | null,
+      fechaFin: (() => { 
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        return d.toISOString().substring(0, 10);
+      })(),
       menuInicio: false,
       menuFin: false,
       opcionesColaboracion: ["Económica", "Materiales", "Mano de Obra", "Otra"],
@@ -136,17 +140,13 @@ export default defineComponent({
       this.$emit("eliminar", this.index);
     },
     soloFuturas(date: unknown): boolean {
-      if (typeof date !== "string") return false;
-      const seleccionada = new Date(date);
+      const seleccionada = new Date(String(date));
       const hoy = new Date();
-      hoy.setDate(hoy.getDate() + 1); // Permitir hoy
       hoy.setHours(0, 0, 0, 0);
-      return seleccionada > hoy;
+      return seleccionada >= hoy;
     },
     mayorAlInicio(date: unknown): boolean {
-      if (typeof date !== "string" || !this.fechaInicio) return false;
-      if(!this.fechaInicio) return false;
-      const seleccionada = new Date(date);
+      const seleccionada = new Date(String(date));
       const inicio = new Date(this.fechaInicio);
       return seleccionada > inicio;
     },
