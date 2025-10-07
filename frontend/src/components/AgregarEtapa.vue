@@ -3,7 +3,7 @@
     <v-row class="mb-1">
       <v-col cols="12" class="d-flex justify-start align-center">
         <h2 class="mr-2">Etapa {{ index + 1 }}</h2>
-        <v-btn class="ml-auto" color="error" variant="tonal" @click="eliminarEtapa">
+        <v-btn align-se class="ml-auto" color="secondary" variant="tonal" @click="eliminarEtapa">
           Eliminar
         </v-btn>
       </v-col>
@@ -24,13 +24,13 @@
       <v-col cols="12" md="6">
         <v-menu
           v-model="menuInicio"
-          :close-on-content-click="false"
+          :close-on-content-click="true"
           transition="scale-transition"
           offset-y
           min-width="auto"
         >
           <template v-slot:activator="{ props }">
-            <v-text-field v-bind="props" v-model="etapa.fechaInicio" label="Fecha de Inicio" readonly />
+            <v-text-field v-bind="props" v-model="etapa.fechaInicio" :value="formartearFecha(etapa.fechaInicio)" label="Fecha de Inicio" readonly />
           </template>
           <v-date-picker
             v-model="etapa.fechaInicio"
@@ -42,13 +42,13 @@
       <v-col cols="12" md="6">
         <v-menu
           v-model="menuFin"
-          :close-on-content-click="false"
+          :close-on-content-click="true"
           transition="scale-transition"
           offset-y
           min-width="auto"
         >
           <template v-slot:activator="{ props }">
-            <v-text-field v-bind="props" v-model="etapa.fechaFin" label="Fecha de Fin" readonly />
+            <v-text-field v-bind="props" v-model="etapa.fechaFin" :value="formartearFecha(etapa.fechaFin)" label="Fecha de Fin" readonly />
           </template>
           <v-date-picker
             v-model="etapa.fechaFin"
@@ -65,21 +65,16 @@
         <v-select
           v-model="etapa.opcionesElegidas"
           :items="opcionesColaboracion"
-          multiple
           label="Tipo de colaboración"
-          outlined
-          dense
         />
-      </v-col>
+      </v-col><!-- outlined dense -->
 
       <v-col cols="12" md="6">
         <v-textarea
           v-model="etapa.descripcionColaboracion"
           label="Detalles de la colaboración"
           auto-grow
-          outlined
-          dense
-        />
+         /><!-- outlined dense -->
       </v-col>
     </v-row>
   </v-container>
@@ -115,6 +110,9 @@ export default defineComponent({
       const seleccionada = new Date(String(date))
       const inicio = new Date(this.etapa.fechaInicio)
       return seleccionada > inicio
+    },
+    formartearFecha(fecha: string | Date){
+      return new Date(fecha).toLocaleDateString('es-AR');
     }
   }
 })

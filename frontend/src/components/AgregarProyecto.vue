@@ -28,7 +28,7 @@
     <!-- Botón agregar etapa -->
     <v-row class="mb-2">
       <v-col cols="12">
-        <v-btn color="primary" @click="agregarEtapa">
+        <v-btn color="secondary" @click="agregarEtapa">
           Agregar Etapa
         </v-btn>
       </v-col>
@@ -37,7 +37,7 @@
     <!-- Botón Enviar -->
     <v-row>
       <v-col cols="12">
-        <v-btn class="mt-4" @click="agregarProyecto">
+        <v-btn color='primary' class="mt-4" @click="agregarProyecto">
           Enviar
         </v-btn>
       </v-col>
@@ -75,8 +75,8 @@ export default defineComponent({
         descripcion: '',
         fechaInicio: new Date().toISOString().substring(0, 10),
         fechaFin: '',
-        opcionesElegidas: [],
-        descripcionColaboracion: ''
+        opcionesElegidas: ['Económica'],
+        descripcionColaboracion: '',
       })
     },
     eliminarEtapa(index: number) {
