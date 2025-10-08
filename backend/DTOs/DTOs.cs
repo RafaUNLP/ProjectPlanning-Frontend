@@ -79,7 +79,7 @@ public class EtapaDTO
     /// <summary>
     /// Categoría de colaboración para la etapa.
     /// </summary>
-    public CategoriaColaboracion CategoriaColaboracion { get; set; } = CategoriaColaboracion.SinColaboracion;
+    public CategoriaColaboracion? CategoriaColaboracion { get; set; }
 
     /// <summary>
     /// Descripción adicional sobre la colaboración.

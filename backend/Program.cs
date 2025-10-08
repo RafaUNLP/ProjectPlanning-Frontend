@@ -49,6 +49,7 @@ builder.Services.AddControllersWithViews()
 //Añado los servicios
 builder.Services.AddScoped<ProyectoRepository>();
 builder.Services.AddScoped<EtapaRepository>();
+builder.Services.AddScoped<ColaboracionRepository>();
 
 //Añado los repositorios
 

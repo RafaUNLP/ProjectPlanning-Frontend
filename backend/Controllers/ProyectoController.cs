@@ -37,6 +37,7 @@ public class ProyectoController : ControllerBase
                 Id = Guid.NewGuid(),
                 Nombre = proyectoDTO.Nombre,
                 Descripcion = proyectoDTO.Descripcion,
+                Fecha = DateTime.Now,
                 Etapas = proyectoDTO.Etapas.Select(e => new Etapa()
                 {
                     Id = Guid.NewGuid(),
@@ -44,8 +45,13 @@ public class ProyectoController : ControllerBase
                     Descripcion = e.Descripcion,
                     FechaInicio = e.FechaInicio.ToLocalTime(),
                     FechaFin = e.FechaFin.ToLocalTime(),
-                    CategoriaColaboracion = e.CategoriaColaboracion,
-                    DescripcionColaboracion = e.DescripcionColaboracion
+                    Colaboracion = (e.CategoriaColaboracion == null) ? null : new Colaboracion()
+                    {
+                        Id = Guid.NewGuid(),
+                        CategoriaColaboracion = e.CategoriaColaboracion.Value,
+                        Descripcion = e.DescripcionColaboracion ?? string.Empty,
+                        EtapaId = e.Id ?? Guid.Empty
+                    }
                 }).ToList()
             });
 
