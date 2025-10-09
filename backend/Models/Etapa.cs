@@ -13,6 +13,5 @@ public class Etapa{
     public required string Descripcion { get; set; }
     [Column(TypeName = "timestamp")] public required DateTime FechaInicio { get; set; }
     [Column(TypeName = "timestamp")] public required DateTime FechaFin { get; set; }
-    [DefaultValue(0)]//valor default en BD
     public Colaboracion? Colaboracion { get; set; }
 }

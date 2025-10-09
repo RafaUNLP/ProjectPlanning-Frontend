@@ -13,15 +13,10 @@ public class ProyectoController : ControllerBase
 {
     private readonly ProyectoRepository _proyectoRepository;
     private readonly BonitaService _bonitaService;
-    public ProyectoController(ProyectoRepository proyectoRepository)
+    public ProyectoController(ProyectoRepository proyectoRepository, BonitaService bonitaService)
     {
         _proyectoRepository = proyectoRepository;
-        var _access = new Access();
-        var RequestHelper = _access.LoginAsync("walter.bates", "bpm").Result;
-        if (RequestHelper != null)
-        {
-            _bonitaService = new BonitaService(RequestHelper);            
-        }
+        _bonitaService = bonitaService;
     }
 
     [HttpPost]
@@ -29,6 +24,11 @@ public class ProyectoController : ControllerBase
     {
         try
         {
+            bool nombreProyectoEnUso = await _proyectoRepository.Exist(p => p.Nombre.ToLower() == proyectoDTO.Nombre.ToLower());
+
+            if (nombreProyectoEnUso)
+                return Conflict("El nombre de proyecto ya está en uso, por favor use uno distinto.");
+
             if (proyectoDTO.Etapas.Any(e => e.FechaFin <= e.FechaInicio))
                 return BadRequest("La fecha de fin de todas las etapas debe ser mayor a la fecha de inicio de la misma.");
 

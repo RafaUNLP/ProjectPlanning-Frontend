@@ -46,12 +46,15 @@ builder.Services.AddControllersWithViews()
     }
 );
 
-//Añado los servicios
+//Añado los repositorios
 builder.Services.AddScoped<ProyectoRepository>();
 builder.Services.AddScoped<EtapaRepository>();
 builder.Services.AddScoped<ColaboracionRepository>();
+builder.Services.AddScoped<OrganizacionRepository>();
 
-//Añado los repositorios
+//Añado los servicios
+builder.Services.AddScoped<BonitaService>();
+
 
 var app = builder.Build();
 

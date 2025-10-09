@@ -11,9 +11,9 @@ public class BonitaService
 {
     private readonly RequestHelper _request;
 
-    public BonitaService(RequestHelper request)
+    public BonitaService()
     {
-        _request = request;
+        _request = new Access().LoginAsync("walter.bates", "bpm").Result;
     }
 
     // public async Task<string> GetAllProcessesAsync()

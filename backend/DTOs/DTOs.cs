@@ -87,6 +87,41 @@ public class EtapaDTO
     public string? DescripcionColaboracion { get; set; }
 }
 
+public class CrearOrganizacionDTO
+{
+    /// <summary>
+    /// Nombre único de la organización.
+    /// </summary>
+    [Required] public required string Nombre { get; set; }
+
+    /// <summary>
+    /// Nombre único de la organización.
+    /// </summary>
+    [Required] public required string Contraseña { get; set; }
+}
+public class OrganizacionDTO //para ocultar la contraseña
+{
+    /// <summary>
+    /// Id único de la organización.
+    /// </summary>
+    public Guid? Id { get; set; }
+
+    /// <summary>
+    /// Nombre único de la organización.
+    /// </summary>
+    [Required] public required string Nombre { get; set; }
+
+    /// <summary>
+    /// Listado de sus proyectos
+    /// </summary>
+    public List<Proyecto> Proyectos { get; set; } = [];
+
+    /// <summary>
+    /// Listado de las colaboraciones con las que se comprometió
+    /// </summary>
+    public List<Colaboracion> ColaboracionesComprometida { get; set; } = [];
+}
+
 public class BonitaProcessResponse
 {
     public string id { get; set; }
