@@ -9,4 +9,6 @@ public class AppDbContext : DbContext
 
     public DbSet<Proyecto> Proyecto { get; set; }
     public DbSet<Etapa> Etapa { get; set; }
+    public DbSet<Organizacion> Organizacion { get; set; }
+    public DbSet<Colaboracion> Colaboracion { get; set; }
 }
