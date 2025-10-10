@@ -30,13 +30,18 @@ public class ProyectoDTO
     /// Nombre del proyecto. Este campo es obligatorio.
     /// </summary>
     [Required]
-    public string Nombre { get; set; }
+    public required string Nombre { get; set; }
 
     /// <summary>
     /// Descripción detallada del proyecto. Este campo es obligatorio.
     /// </summary>
     [Required]
-    public string Descripcion { get; set; }
+    public required string Descripcion { get; set; }
+
+    /// <summary>
+    /// POR AHORA exijo el ID de la org dueña, más adelante metemos un login con JWT local y lo toma de ahí
+    /// </summary>
+    [Required] public required Guid OrganizacionId { get; set; }
 
     /// <summary>
     /// Lista de etapas del proyecto. Este campo es obligatorio.

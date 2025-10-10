@@ -5,7 +5,7 @@ Notas del backend:
         docker compose up -d
     1 - Ubicarse en la carpeta backend
     2 - Crear la primer migración con: 
-            dotnet tool run dotnet-ef migrations add "Migración inicial" 
+            dotnet tool run dotnet-ef migrations add "Migración inicial" (si falla, se puede probar corriendo el backend en debug con F5 y volviendo a crear la migración)
     3 - Opcionalmente, ver todas las migraciones existentes con:
             dotnet tool run dotnet-ef migrations list
     4 - Correr la migración con dotnet tool run dotnet-ef database update

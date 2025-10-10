@@ -37,6 +37,7 @@ public class ProyectoController : ControllerBase
                 Id = Guid.NewGuid(),
                 Nombre = proyectoDTO.Nombre,
                 Descripcion = proyectoDTO.Descripcion,
+                OrganizacionId = proyectoDTO.OrganizacionId,
                 Fecha = DateTime.Now,
                 Etapas = proyectoDTO.Etapas.Select(e => new Etapa()
                 {
@@ -50,7 +51,7 @@ public class ProyectoController : ControllerBase
                         Id = Guid.NewGuid(),
                         CategoriaColaboracion = e.CategoriaColaboracion.Value,
                         Descripcion = e.DescripcionColaboracion ?? string.Empty,
-                        EtapaId = e.Id ?? Guid.Empty
+                        EtapaId = e.Id ?? Guid.Empty,
                     }
                 }).ToList()
             });
@@ -80,7 +81,7 @@ public class ProyectoController : ControllerBase
     {
         try
         {
-            Proyecto? buscado = await _proyectoRepository.GetAsyncWithIncludes(id, includes: "Etapas");
+            Proyecto? buscado = await _proyectoRepository.GetAsyncWithIncludes(id, includes: "Etapas,Etapas.Colaboracion");
 
             if (buscado == null)
                 return NotFound();

@@ -66,16 +66,17 @@ public class OrganizacionController : ControllerBase
     {
         try
         {
-            Organizacion? buscada = await _organizacionRepository.GetAsyncWithIncludes(id, includes: "Proyectos,ColaboracionesParaRealizar");
+            Organizacion? buscada = await _organizacionRepository.GetAsyncWithIncludes(id, includes: "Proyectos,Proyectos.Etapas,Proyectos.Etapas.Colaboracion,ColaboracionesComprometida");
 
             if (buscada == null)
                 return NotFound();
 
             return Ok(new OrganizacionDTO()
             {
+                Id = buscada.Id,
                 Nombre = buscada.Nombre,
                 Proyectos = buscada.Proyectos,
-                ColaboracionesComprometida = buscada.ColaboracionesComprometida,
+                ColaboracionesComprometida = buscada.ColaboracionesComprometida ?? [],
             });
         }
         catch (Exception ex)
