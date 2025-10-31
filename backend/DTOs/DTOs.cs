@@ -2,6 +2,7 @@ using System.Net;
 using backend.Models;
 using System.ComponentModel.DataAnnotations;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Text.Json.Serialization;
 
 namespace backend.DTOs;
 
@@ -29,13 +30,18 @@ public class ProyectoDTO
     /// Nombre del proyecto. Este campo es obligatorio.
     /// </summary>
     [Required]
-    public string Nombre { get; set; }
+    public required string Nombre { get; set; }
 
     /// <summary>
     /// Descripción detallada del proyecto. Este campo es obligatorio.
     /// </summary>
     [Required]
-    public string Descripcion { get; set; }
+    public required string Descripcion { get; set; }
+
+    /// <summary>
+    /// POR AHORA exijo el ID de la org dueña, más adelante metemos un login con JWT local y lo toma de ahí
+    /// </summary>
+    [Required] public required Guid OrganizacionId { get; set; }
 
     /// <summary>
     /// Lista de etapas del proyecto. Este campo es obligatorio.
@@ -78,10 +84,95 @@ public class EtapaDTO
     /// <summary>
     /// Categoría de colaboración para la etapa.
     /// </summary>
-    public CategoriaColaboracion CategoriaColaboracion { get; set; } = CategoriaColaboracion.SinColaboracion;
+    public CategoriaColaboracion? CategoriaColaboracion { get; set; }
 
     /// <summary>
     /// Descripción adicional sobre la colaboración.
     /// </summary>
     public string? DescripcionColaboracion { get; set; }
+}
+
+public class CrearOrganizacionDTO
+{
+    /// <summary>
+    /// Nombre único de la organización.
+    /// </summary>
+    [Required] public required string Nombre { get; set; }
+
+    /// <summary>
+    /// Nombre único de la organización.
+    /// </summary>
+    [Required] public required string Contraseña { get; set; }
+}
+public class OrganizacionDTO //para ocultar la contraseña
+{
+    /// <summary>
+    /// Id único de la organización.
+    /// </summary>
+    public Guid? Id { get; set; }
+
+    /// <summary>
+    /// Nombre único de la organización.
+    /// </summary>
+    [Required] public required string Nombre { get; set; }
+
+    /// <summary>
+    /// Listado de sus proyectos
+    /// </summary>
+    public List<Proyecto> Proyectos { get; set; } = [];
+
+    /// <summary>
+    /// Listado de las colaboraciones con las que se comprometió
+    /// </summary>
+    public List<Colaboracion> ColaboracionesComprometida { get; set; } = [];
+}
+
+public class BonitaProcessResponse
+{
+    public string id { get; set; }
+    public string name { get; set; }
+    public string version { get; set; }
+}
+
+public class BonitaCaseResponse
+{
+    public long caseId { get; set; }
+}
+
+public enum ActivityStateEnum
+{
+    [JsonPropertyName("failed")] Failed,
+    [JsonPropertyName("initializing")] Initializing,
+    [JsonPropertyName("ready")] Ready,
+    [JsonPropertyName("executing")] Executing,
+    [JsonPropertyName("completing")] Completing,
+    [JsonPropertyName("completed")] Completed,
+    [JsonPropertyName("waiting")] Waiting,
+    [JsonPropertyName("skipped")] Skipped,
+    [JsonPropertyName("cancelled")] Cancelled,
+    [JsonPropertyName("aborted")] Aborted,
+    [JsonPropertyName("cancelling subtasks")] CancellingSubtasks,
+    [JsonPropertyName("aborting activity with boundary")] AbortingWithBoundary,
+    [JsonPropertyName("completing activity with boundary")] CompletingWithBoundary
+}
+
+public class BonitaActivityResponse
+{
+    public string id { get; set; }
+    public string name { get; set; }
+    // public ActivityStateEnum state { get; set; }
+    public string type { get; set; }
+    public string priority { get; set; }
+    public string actorId { get; set; }
+
+}
+
+public class BonitaUserResponse
+{
+    public string id { get; set; }
+    public string userName { get; set; }
+    public string firstName { get; set; }
+    public string lastName { get; set; }
+
+    public string enabled { get; set; }
 }

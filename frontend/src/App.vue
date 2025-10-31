@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import AgregarProyecto from './components/AgregarProyecto.vue';
+import Navbar from './components/Navbar.vue';
 
 </script>
 
 <template>
-  <div>
-    <AgregarProyecto></AgregarProyecto>
-  </div>
+  <v-app>
+    <Navbar/>
+    <v-main>
+      <AgregarProyecto/>
+    </v-main>
+  </v-app>
 </template>
 
 <style scoped>

@@ -107,8 +107,9 @@ namespace backend.Repositories
             {
                 query = query.Include(include);
             }
-            if(page >= 0 && count >= 0){
-                query = query.Skip(page*count).Take(count);
+            if (page >= 0 && count >= 0)
+            {
+                query = query.Skip(page * count).Take(count);
             }
             if (orderBy != null)
             {
@@ -116,5 +117,11 @@ namespace backend.Repositories
             }
             return await query.ToListAsync();
         }
+
+        public async Task<bool> Exist(Expression<Func<TEntity, bool>> filtro)
+        {
+            return await _context.Set<TEntity>().AnyAsync(filtro);
+        }
+
     }
 }

@@ -2,6 +2,7 @@ using System.Reflection;
 using backend.Data;
 using backend.Repositories;
 using Microsoft.EntityFrameworkCore;
+using backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.AllowAnyOrigin() 
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 // builder.Services.AddSwaggerGen(options =>
 // {
 //     // Configurar Swagger para usar OpenAPI 3.0 y especificar la versión del API
@@ -35,11 +46,15 @@ builder.Services.AddControllersWithViews()
     }
 );
 
-//Añado los servicios
+//Añado los repositorios
 builder.Services.AddScoped<ProyectoRepository>();
 builder.Services.AddScoped<EtapaRepository>();
+builder.Services.AddScoped<ColaboracionRepository>();
+builder.Services.AddScoped<OrganizacionRepository>();
 
-//Añado los repositorios
+//Añado los servicios
+builder.Services.AddScoped<BonitaService>();
+
 
 var app = builder.Build();
 
@@ -49,6 +64,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("AllowFrontend");
 
 //app.UseHttpsRedirection();
 app.MapControllers();
