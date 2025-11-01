@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Servicio de Frontend (DEV - Vite)
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
+    ports:
+      # Accede en http://localhost:8080
+      # Puedes cambiar el '8080' si sigue ocupado
+      - "8080:5173" 
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # No sobrescribir el node_modules del contenedor
+    restart: always
+
+  # Servicio de Backend (DEV - .NET Watch)
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    ports:
+      - "5165:5165"
+    environment:
+      # Apunta al servicio 'db' de este mismo archivo
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=proyectPlanning;Username=postgres;Password=postgres
+      - ASPNETCORE_URLS=http://+:5165
+    volumes:
+      - ./backend:/src/backend
+    depends_on:
+      - db
+    restart: always
+
+  # Servicio de Base de Datos (PostgreSQL)
+  db:
+    image: postgres:16
+    container_name: postgres_proyect_planning
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: proyectPlanning
+    ports:
+      - "5434:5432" # Puerto para conectarte desde tu PC (ej: DBeaver)
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

@@ -1,0 +1,16 @@
+# Usamos la imagen del SDK, que incluye 'dotnet watch'
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+WORKDIR /src
+
+# Copiamos los archivos de proyecto y restauramos (para cachear la capa)
+COPY backend/backend.sln ./backend/
+COPY backend/backend.csproj ./backend/
+RUN dotnet restore backend/backend.sln
+
+# Establecemos el directorio de trabajo donde está el proyecto
+WORKDIR /src/backend
+EXPOSE 5165
+
+# El comando 'watch' se ejecutará desde el docker-compose
+# Usamos el perfil 'http' definido en tu launchSettings.json
+CMD ["dotnet", "watch", "run", "--launch-profile", "http"]
