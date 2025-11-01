@@ -1,0 +1,15 @@
+# Usamos la imagen de Node
+FROM node:20-alpine
+WORKDIR /app
+
+# Copiamos los archivos de dependencias e instalamos (para cachear la capa)
+COPY frontend/package.json .
+COPY frontend/package-lock.json .
+RUN npm install
+
+EXPOSE 5173
+
+# Ejecutamos el servidor de desarrollo de Vite
+# El '-- --host' es para que Vite escuche en todas las interfaces de red
+# y no solo en 'localhost' (lo que lo haría inaccesible desde fuera del contenedor)
+CMD ["npm", "run", "dev", "--", "--host"]

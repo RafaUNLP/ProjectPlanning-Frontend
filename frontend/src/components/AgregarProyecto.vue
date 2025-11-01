@@ -91,7 +91,9 @@ export default defineComponent({
         }
 
         const response = await api.post('/proyecto', payload)
-        alert('Proyecto agregado exitosamente')
+        if (response.status === 200) {
+          alert('Proyecto agregado exitosamente');
+        }
 
         // Limpiar formulario
         this.nombreProyecto = ''

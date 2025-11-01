@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Servicio de Frontend (Vue + Nginx)
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8080:80" # Accede al front en http://localhost:8080
+    depends_on:
+      - backend
+    restart: always
+
+  # Servicio de Backend (.NET)
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "5165:5165" # Expone el puerto del backend
+    environment:
+      # Sobrescribimos la connection string para que apunte al servicio 'db'
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=proyectPlanning;Username=postgres;Password=postgres
+      - ASPNETCORE_URLS=http://+:5165
+    depends_on:
+      - db
+    restart: always
+
+  # Servicio de Base de Datos (PostgreSQL)
+  db:
+    image: postgres:16
+    container_name: postgres_proyect_planning
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: proyectPlanning
+    ports:
+      - "5434:5432" # Mantenemos el puerto 5434 para acceso local si es necesario
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata: # Volumen nombrado para persistir los datos de la BD
