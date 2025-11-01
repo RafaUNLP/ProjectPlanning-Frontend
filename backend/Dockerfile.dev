@@ -13,4 +13,4 @@ EXPOSE 5165
 
 # El comando 'watch' se ejecutará desde el docker-compose
 # Usamos el perfil 'http' definido en tu launchSettings.json
-CMD ["dotnet", "watch", "run", "--launch-profile", "http"]
+CMD ["dotnet", "watch", "run", "--no-launch-profile"]
