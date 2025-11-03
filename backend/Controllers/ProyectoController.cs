@@ -56,9 +56,9 @@ public class ProyectoController : ControllerBase
                 }).ToList()
             });
 
-            var idProc = await _bonitaService.GetProcessIdByName("Prueba1");//recupera id del proceso
+            var idProc = await _bonitaService.GetProcessIdByName("Proceso de realización de un proyecto");//recupera id del proceso
             var caseId = await _bonitaService.StartProcessById(idProc);//inicia una instancia del mismo
-            var suc = await _bonitaService.SetVariableByCase(caseId.ToString(), "var1", "valor1", "java.lang.String");//le instancia variables de prueba
+            var suc = await _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoDTO.ToString(), "java.lang.String");//le instancia variables de prueba
             var activity = await _bonitaService.GetActivityByCaseId(caseId.ToString());//recupera el id de la actividad
             Console.WriteLine($"Actividad: {activity}");
             var userId = await _bonitaService.GetUserIdByUserName("walter.bates");//hay que asignar un usuario a la actividad para completarla, recupera el id usuario en bonita
