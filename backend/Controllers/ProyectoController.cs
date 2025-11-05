@@ -38,12 +38,12 @@ public class ProyectoController : ControllerBase
                 var idProc = await _bonitaService.GetProcessIdByName("Proceso de realización de un proyecto");//recupera id del proceso
                 var caseId = await _bonitaService.StartProcessById(idProc);//inicia una instancia del mismo
                 var proyectoJson = System.Text.Json.JsonSerializer.Serialize(proyectoDTO);
-                _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoJson, "java.lang.String");//le instancia variables de prueba
+                var success = await _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoJson, "java.lang.String");//le instancia variables de prueba
                 activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Cargar el proyecto");//recupera el id de la actividad
-                Console.WriteLine(activity == null);
+                Console.WriteLine(activity);
                 Console.WriteLine($"Actividad: {activity.name} - {activity.id}");
                 var userId = await _bonitaService.GetUserIdByUserName("walter.bates");//hay que asignar un usuario a la actividad para completarla, recupera el id usuario en bonita
-                _bonitaService.AssignActivityToUser(activity.id, userId);//le asigna la actividad al usuario --- esto era await _bonitaService....
+                await _bonitaService.AssignActivityToUser(activity.id, userId);//le asigna la actividad al usuario --- esto era await _bonitaService....
             }
             catch (Exception ex)
             {
