@@ -47,5 +47,13 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog_project_planning
+    ports:
+      - "1025:1025"  # Este es el puerto SMTP que Bonita usará
+      - "8025:8025"  # Esta es la interfaz web donde verás los correos
+    restart: always
+
 volumes:
   pgdata:
