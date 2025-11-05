@@ -32,6 +32,24 @@ public class ProyectoController : ControllerBase
             if (proyectoDTO.Etapas.Any(e => e.FechaFin <= e.FechaInicio))
                 return BadRequest("La fecha de fin de todas las etapas debe ser mayor a la fecha de inicio de la misma.");
 
+            BonitaActivityResponse activity;
+            try
+            {
+                var idProc = await _bonitaService.GetProcessIdByName("Proceso de realización de un proyecto");//recupera id del proceso
+                var caseId = await _bonitaService.StartProcessById(idProc);//inicia una instancia del mismo
+                var proyectoJson = System.Text.Json.JsonSerializer.Serialize(proyectoDTO);
+                _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoJson, "java.lang.String");//le instancia variables de prueba
+                activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Cargar el proyecto");//recupera el id de la actividad
+                Console.WriteLine(activity == null);
+                Console.WriteLine($"Actividad: {activity.name} - {activity.id}");
+                var userId = await _bonitaService.GetUserIdByUserName("walter.bates");//hay que asignar un usuario a la actividad para completarla, recupera el id usuario en bonita
+                _bonitaService.AssignActivityToUser(activity.id, userId);//le asigna la actividad al usuario --- esto era await _bonitaService....
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(502, $"Error en la integración con Bonita: {ex.Message}");
+            }
+
             Proyecto nuevo = await _proyectoRepository.AddAsync(new Proyecto()
             {
                 Id = Guid.NewGuid(),
@@ -56,13 +74,7 @@ public class ProyectoController : ControllerBase
                 }).ToList()
             });
 
-            var idProc = await _bonitaService.GetProcessIdByName("Proceso de realización de un proyecto");//recupera id del proceso
-            var caseId = await _bonitaService.StartProcessById(idProc);//inicia una instancia del mismo
-            var suc = await _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoDTO.ToString(), "java.lang.String");//le instancia variables de prueba
-            var activity = await _bonitaService.GetActivityByCaseId(caseId.ToString());//recupera el id de la actividad
-            Console.WriteLine($"Actividad: {activity}");
-            var userId = await _bonitaService.GetUserIdByUserName("walter.bates");//hay que asignar un usuario a la actividad para completarla, recupera el id usuario en bonita
-            await _bonitaService.AssignActivityToUser(activity.id, userId);//le asigna la actividad al usuario
+            
             bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);//completa la actividad
 
             if (finishedActivity)

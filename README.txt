@@ -20,7 +20,7 @@ Notas del backend:
 
 
 
-##Docker explicacion
+## Docker explicacion
 Contexto de Build: El docker-compose.yml raíz usa context: . y especifica la ruta a cada Dockerfile (backend/Dockerfile y frontend/Dockerfile).
 
 Red de Docker:
@@ -39,3 +39,17 @@ Base de Datos: Accesible en localhost:5434 (mapeado al puerto 5432 del contenedo
 
 Hay un docker compose para produccion y otro para dev, para levantarlo:
 ``docker compose -f docker-compose.dev.yml up -d --build``
+
+------
+
+### Para atachear el debugger con docker
+- tener instalada la extension Dev Container
+- Ir a la extension -> Container backend -> Attach VS Code
+- En la nueva ventana de VS Code -> Ir a debugger
+- Al lado del boton play -> .Net Core Attach
+- Seleccionar el proceso "backend"
+- Enjoy
+
+
+------
+Para que ande la conexion de bonita al cloud, hay que pegarle al endpoint antes asi "se despierta", parece que bonita tiene un timeout corto y falla la tarea
