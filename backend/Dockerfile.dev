@@ -2,6 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0
 WORKDIR /src
 
+USER root
+RUN apt-get update && apt-get install -y procps
+
 # Copiamos los archivos de proyecto y restauramos (para cachear la capa)
 COPY backend/backend.sln ./backend/
 COPY backend/backend.csproj ./backend/

@@ -19,8 +19,7 @@ public class Access
             AllowAutoRedirect = false
         };
         _client = new HttpClient(handler);
-        _client.BaseAddress = new Uri("http://localhost:49828/bonita/");
-    }
+        _client.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");    }
 
     public async Task<RequestHelper> LoginAsync(string username, string password)
     {

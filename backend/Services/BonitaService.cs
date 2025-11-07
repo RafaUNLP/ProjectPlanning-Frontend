@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.ResponseCompression;
 using backend.DTOs;
+using System.Runtime.CompilerServices;
 
 namespace backend.Services;
 
@@ -32,11 +33,18 @@ public class BonitaService
     //     return await _request.DoRequestAsync(HttpMethod.Get, $"API/bpm/process/{processId}");
     // }
 
-    public async Task<string?> GetProcessIdByName(string processName)
+    public async Task<string> GetProcessIdByName(string processName)
     {
-        var response = await _request.DoRequestAsync<List<BonitaProcessResponse>>(HttpMethod.Get, $"API/bpm/process?f=name={processName}");
 
-        return response?.FirstOrDefault()?.id;
+        var response = await _request.DoRequestAsync<List<BonitaProcessResponse>>(HttpMethod.Get, $"API/bpm/process?f=name={processName}");
+        try
+        {
+            return response.First().id;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"No se encontró el proceso con nombre '{processName}': {ex.Message}");
+        }
 
     }
 
@@ -49,10 +57,15 @@ public class BonitaService
     //Initiate process by id
     public async Task<long> StartProcessById(string processId)
     {
-        var response = await _request.DoRequestAsync<BonitaCaseResponse>(HttpMethod.Post, $"API/bpm/process/{processId}/instantiation");
-
-
-        return response.caseId;
+        try
+        {
+            var response = await _request.DoRequestAsync<BonitaCaseResponse>(HttpMethod.Post, $"API/bpm/process/{processId}/instantiation");
+            return response.caseId;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error al iniciar el proceso con ID '{processId}': {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -68,19 +81,26 @@ public class BonitaService
     /// <returns>200: Respuesta vacia</returns>
     public async Task<bool> SetVariableByCase(string caseId, string variableName, string value, string varType)
     {
-        var payload = new
+        try
         {
-            value = value,
-            type = varType
-        };
+            var payload = new
+            {
+                value = value,
+                type = varType
+            };
 
-        var content = new StringContent(
-            JsonSerializer.Serialize(payload),
-            Encoding.UTF8,
-            "application/json"
-        );
+            var content = new StringContent(
+                JsonSerializer.Serialize(payload),
+                Encoding.UTF8,
+                "application/json"
+            );
 
-        return await _request.DoRequestAsync<object>(HttpMethod.Put, $"API/bpm/caseVariable/{caseId}/{variableName}", content) == null;
+           return await _request.DoRequestAsync<object>(HttpMethod.Put, $"API/bpm/caseVariable/{caseId}/{variableName}", content) == null;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error al establecer la variable '{variableName}' en el caso '{caseId}': {ex.Message}");
+        }
     }
 
     // public async Task<string> AssignTaskToUser(string taskId, string userId)
@@ -119,24 +139,74 @@ public class BonitaService
         return response?.FirstOrDefault();
     }
 
+
+    public async Task<BonitaActivityResponse> GetActivityByCaseIdAndName(string caseId, string activityName)
+    {
+        // 1. Configuración de reintento
+        int attempts = 0;
+        int maxAttempts = 10; // Reintentar 10 veces
+        int delayMs = 500;    // Esperar 500ms entre intentos (5 segundos en total)
+
+        string encodedName = System.Net.WebUtility.UrlEncode(activityName);
+        string endpoint = $"API/bpm/humanTask?f=caseId={caseId}&f=name={encodedName}";
+
+        //Hay que hacer polling de la actividad porque a veces tarda en aparecer
+        while (attempts < maxAttempts)
+        {
+            try
+            {
+                var response = await _request.DoRequestAsync<List<BonitaActivityResponse>>(HttpMethod.Get, endpoint);
+
+                if (response != null && response.Any())
+                {
+                    Console.WriteLine($"Actividad encontrada en intento {attempts + 1}.");
+                    return response.First(); 
+                }
+
+                attempts++;
+                await Task.Delay(delayMs);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al buscar actividad por nombre: {ex.Message}");
+            }
+        }
+
+        throw new Exception($"Timeout: La actividad '{activityName}' no apareció a tiempo para el caso '{caseId}'.");
+    }
+
     public async Task<string> GetUserIdByUserName(string userName)
     {
-        var response = await _request.DoRequestAsync<List<BonitaUserResponse>>(HttpMethod.Get, $"API/identity/user?f=displayName={userName}");
-        return response?.FirstOrDefault()?.id;
+        try
+        {
+            var response = await _request.DoRequestAsync<List<BonitaUserResponse>>(HttpMethod.Get, $"API/identity/user?f=displayName={userName}");
+            return response.First().id;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"No se encontró el usuario con nombre '{userName}': {ex.Message}");
+        }
     }
+    
     
     public async Task<bool> AssignActivityToUser(string taskId, string userId)
     {
-        var payload = new
+        try
         {
-            assigned_id = userId
-        };
+            var payload = new
+            {
+                assigned_id = userId
+            };
 
-        var content = new StringContent(
-            JsonSerializer.Serialize(payload),
-            Encoding.UTF8,
-            "application/json"
-        );
-        return await _request.DoRequestAsync<object>(HttpMethod.Put, $"API/bpm/userTask/{taskId}", content) == null;
+            var content = new StringContent(
+                JsonSerializer.Serialize(payload),
+                Encoding.UTF8,
+                "application/json"
+            );
+            return await _request.DoRequestAsync<object>(HttpMethod.Put, $"API/bpm/userTask/{taskId}", content) == null;
+        } catch (Exception ex)
+        {
+            throw new Exception($"Error al asignar la actividad '{taskId}' al usuario '{userId}': {ex.Message}");
+        }
     }
 }
