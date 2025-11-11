@@ -3,8 +3,53 @@ using backend.Data;
 using backend.Repositories;
 using Microsoft.EntityFrameworkCore;
 using backend.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Net.Http;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// --- Configuración de JWT ---
+// 1. Añadir configuración a appsettings.json (ver abajo)
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new InvalidOperationException("Jwt:Key no está configurada. Añádela a appsettings.json");
+}
+
+// 2. Configurar Autenticación
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+
+// 3. Añadir IHttpContextAccessor y HttpClientFactory
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient("bonitaClient")
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        return new HttpClientHandler
+        {
+            UseCookies = false,            
+        };
+    });
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -53,6 +98,32 @@ builder.Services.AddScoped<ColaboracionRepository>();
 builder.Services.AddScoped<OrganizacionRepository>();
 
 //Añado los servicios
+builder.Services.AddScoped<RequestHelper>(sp =>
+{
+    // Obtener un HttpClient de la factoría con nombre "bonitaClient"
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("bonitaClient");
+    httpClient.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");
+
+    // Obtener el HttpContext actual
+    var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext;
+    if (httpContext == null)
+    {
+        throw new InvalidOperationException("No se pudo obtener HttpContext.");
+    }
+
+    // Buscar el token de Bonita guardado en el JWT del usuario
+    var bonitaTokenClaim = httpContext.User.FindFirst("bonita_token");
+    var jSessionIdClaim = httpContext.User.FindFirst("bonita_jsession_id");
+
+    if (bonitaTokenClaim == null || string.IsNullOrEmpty(bonitaTokenClaim.Value) ||
+        jSessionIdClaim == null || string.IsNullOrEmpty(jSessionIdClaim.Value))
+    {
+        throw new UnauthorizedAccessException("Token de Bonita no encontrado en el JWT.");    
+    }
+
+    return new RequestHelper(httpClient, bonitaTokenClaim.Value, jSessionIdClaim.Value);
+});
+
 builder.Services.AddScoped<BonitaService>();
 
 
@@ -66,6 +137,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+
+app.UseAuthentication(); // 1. Verifica quién es el usuario
+app.UseAuthorization();  // 2. Verifica si el usuario tiene permiso
 
 //app.UseHttpsRedirection();
 app.MapControllers();
