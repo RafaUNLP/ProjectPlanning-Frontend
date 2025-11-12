@@ -163,7 +163,7 @@ public class BonitaService
     {
         try
         {
-            var response = await _request.DoRequestAsync<List<BonitaUserResponse>>(HttpMethod.Get, $"API/identity/user?f=displayName={userName}");
+            var response = await _request.DoRequestAsync<List<BonitaUserResponse>>(HttpMethod.Get, $"API/identity/user?s={userName}");
             return response.First().id;
         }
         catch (Exception ex)

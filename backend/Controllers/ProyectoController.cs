@@ -5,6 +5,7 @@ using backend.Repositories;
 using backend.Services;
 using Microsoft.VisualBasic;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace backend.Controllers;
 
@@ -42,9 +43,14 @@ public class ProyectoController : ControllerBase
                 var proyectoJson = System.Text.Json.JsonSerializer.Serialize(proyectoDTO);
                 var success = await _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoJson, "java.lang.String");
                 activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Cargar el proyecto");
-                Console.WriteLine(activity);
-                Console.WriteLine($"Actividad: {activity.name} - {activity.id}");
-                var userId = await _bonitaService.GetUserIdByUserName("walter.bates");
+
+                var userName = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+                if (string.IsNullOrEmpty(userName))
+                {
+                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+                }
+
+                var userId = await _bonitaService.GetUserIdByUserName(userName);
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
             }
             catch (Exception ex)
