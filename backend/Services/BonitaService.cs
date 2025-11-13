@@ -12,27 +12,16 @@ public class BonitaService
 {
     private readonly RequestHelper _request;
 
-    public BonitaService()
+    public BonitaService(RequestHelper requestHelper)
     {
-        _request = new Access().LoginAsync("walter.bates", "bpm").Result;
+        _request = requestHelper ?? throw new ArgumentNullException(nameof(requestHelper));
     }
 
-    // public async Task<string> GetAllProcessesAsync()
-    // {
-    //     return await _request.DoRequestAsync(HttpMethod.Get, "API/bpm/process?p=0&c=1000");
-    // }
-
-    // public async Task<string> GetTasksAsync()
-    // {
-    //     return await _request.DoRequestAsync(HttpMethod.Get, "API/bpm/humanTask?p=0&c=50");
-    // }
-
-
-    // public async Task<string> GetProcessNameById(string processId)
-    // {
-    //     return await _request.DoRequestAsync(HttpMethod.Get, $"API/bpm/process/{processId}");
-    // }
-
+    /// <summary>
+    /// Recupera el ID de un proceso en Bonita a partir de su nombre.
+    /// </summary>
+    /// <param name="processName">Nombre del proceso en Bonita</param>
+    /// <returns>ID del proceso en Bonita</returns>
     public async Task<string> GetProcessIdByName(string processName)
     {
 
@@ -48,13 +37,12 @@ public class BonitaService
 
     }
 
-    // public async Task<Dictionary<string, string>> GetProcessCountAsync()
-    // {
-    //     return await _request.DoRequestAsync(HttpMethod.Get, "API/bpm/process/count");
 
-    // }
-
-    //Initiate process by id
+    /// <summary>
+    /// Inicia una nueva instancia de un proceso específico en Bonita.
+    /// </summary>
+    /// <param name="processId">Identificador del proceso en Bonita</param>
+    /// <returns>ID del caso (instancia de proceso) iniciado</returns>
     public async Task<long> StartProcessById(string processId)
     {
         try
@@ -103,43 +91,34 @@ public class BonitaService
         }
     }
 
-    // public async Task<string> AssignTaskToUser(string taskId, string userId)
-    // {
-    //     var content = new FormUrlEncodedContent(new[]
-    //     {
-    //         new KeyValuePair<string,string>("assigned_id", userId)
-    //     });
-    //     return await _request.DoRequestAsync(HttpMethod.Put, $"API/bpm/userTask/{taskId}", content);
-    // }
-
+    /// <summary>
+    /// Completa una actividad (tarea) específica en una instancia de proceso.
+    /// </summary>
+    /// <param name="taskId">Identificador de la actividad (tarea) en la instancia de proceso de Bonita</param>
+    /// <returns>true si la respuesta es 200</returns>
     public async Task<bool> CompleteActivityAsync(string taskId)
     {
         return await _request.DoRequestAsync<object>(HttpMethod.Post, $"API/bpm/userTask/{taskId}/execution") == null;
     }
 
-
-    // public async Task<string> GetVariableAsync(string taskId, string variable)
-    // {
-    //     // Get the user task to retrieve the caseId
-    //     var taskResponse = await _request.DoRequestAsync(HttpMethod.Get, $"API/bpm/userTask/{taskId}");
-    //     // Parse the caseId from the response (assuming JSON format)
-    //     var caseId = Newtonsoft.Json.Linq.JObject.Parse(taskResponse)["caseId"]?.ToString();
-
-    //     if (string.IsNullOrEmpty(caseId))
-    //         throw new System.Exception("caseId not found in userTask response.");
-
-    //     // Get the variable value from the case
-    //     var variableResponse = await _request.DoRequestAsync(HttpMethod.Get, $"API/bpm/caseVariable/{caseId}/{variable}");
-    //     return variableResponse;
-    // }
-
+    /// <summary>
+    /// Recupera la primera actividad asociada a un caso específico.
+    /// </summary>
+    /// <param name="caseId">Identificador del caso en Bonita</param>
+    /// <returns>Objeto BonitaActivityResponse que representa la actividad encontrada</returns> 
     public async Task<BonitaActivityResponse?> GetActivityByCaseId(string caseId)
     {
         var response = await _request.DoRequestAsync<List<BonitaActivityResponse>>(HttpMethod.Get, $"API/bpm/task?f=caseId={caseId}");
         return response?.FirstOrDefault();
     }
 
-
+    /// <summary>
+    /// Recupera una actividad específica dentro de un caso por su nombre.
+    /// Implementa un mecanismo de reintento para manejar la latencia en la aparición de la actividad.
+    /// </summary>
+    /// <param name="caseId">Identificador del caso en Bonita</param>
+    /// <param name="activityName">Nombre de la actividad a recuperar</param>
+    /// <returns>Objeto BonitaActivityResponse que representa la actividad encontrada</returns>
     public async Task<BonitaActivityResponse> GetActivityByCaseIdAndName(string caseId, string activityName)
     {
         // 1. Configuración de reintento
@@ -175,11 +154,16 @@ public class BonitaService
         throw new Exception($"Timeout: La actividad '{activityName}' no apareció a tiempo para el caso '{caseId}'.");
     }
 
+    // <summary>
+    // Recupera el ID de un usuario en Bonita a partir de su nombre de usuario.
+    // </summary>
+    // <param name="userName">Nombre de usuario en Bonita</param>
+    // <returns>ID del usuario en Bonita</returns>
     public async Task<string> GetUserIdByUserName(string userName)
     {
         try
         {
-            var response = await _request.DoRequestAsync<List<BonitaUserResponse>>(HttpMethod.Get, $"API/identity/user?f=displayName={userName}");
+            var response = await _request.DoRequestAsync<List<BonitaUserResponse>>(HttpMethod.Get, $"API/identity/user?s={userName}");
             return response.First().id;
         }
         catch (Exception ex)
@@ -188,7 +172,12 @@ public class BonitaService
         }
     }
     
-    
+    // <summary>
+    // Asigna una actividad a un usuario específico.
+    // </summary>
+    // <param name="taskId">Identificador de la actividad (tarea) en la instancia de proceso de Bonita</param>
+    // <param name="userId">Identificador del usuario al que se asignará la actividad</param>
+    // <returns>200: Respuesta vacia</returns>
     public async Task<bool> AssignActivityToUser(string taskId, string userId)
     {
         try

@@ -176,3 +176,24 @@ public class BonitaUserResponse
 
     public string enabled { get; set; }
 }
+
+public class LoginRequestDTO
+{
+    /// <summary>
+    /// Nombre de usuario (para Bonita).
+    /// </summary>
+    [Required]
+    public required string Username { get; set; }
+
+    /// <summary>
+    /// Contraseña (para Bonita).
+    /// </summary>
+    [Required]
+    public required string Password { get; set; }
+}
+
+public class BonitaSession
+{
+    public required string JSessionId { get; set; }
+    public required string BonitaToken { get; set; }
+}

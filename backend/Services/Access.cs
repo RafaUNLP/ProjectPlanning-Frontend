@@ -2,13 +2,13 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using backend.DTOs;
 
 namespace backend.Services;
 public class Access
 {
     private readonly HttpClient _client;
     private readonly CookieContainer _cookieContainer = new CookieContainer();
-    private string _bonitaToken;
 
     public Access()
     {
@@ -21,7 +21,7 @@ public class Access
         _client = new HttpClient(handler);
         _client.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");    }
 
-    public async Task<RequestHelper> LoginAsync(string username, string password)
+    public async Task<BonitaSession?> LoginAsync(string username, string password)
     {
         var content = new FormUrlEncodedContent(new[]
         {
@@ -34,10 +34,18 @@ public class Access
         if (response.IsSuccessStatusCode)
         {
             var cookies = _cookieContainer.GetCookies(_client.BaseAddress);
-            _bonitaToken = cookies["X-Bonita-API-Token"]?.Value;
+            var bonitaToken = cookies["X-Bonita-API-Token"]?.Value;
+            var jSessionId = cookies["JSESSIONID"]?.Value;
 
-            Console.WriteLine($"Token obtenido: {_bonitaToken}");
-            return new RequestHelper(_client, _bonitaToken);
+            if (!string.IsNullOrEmpty(jSessionId) && !string.IsNullOrEmpty(bonitaToken))
+            {
+                Console.WriteLine($"Token API obtenido para {username}");
+                return new BonitaSession 
+                { 
+                    JSessionId = jSessionId, 
+                    BonitaToken = bonitaToken
+                };
+            }
         }
 
         return null;

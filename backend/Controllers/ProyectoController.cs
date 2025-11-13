@@ -4,11 +4,14 @@ using backend.DTOs;
 using backend.Repositories;
 using backend.Services;
 using Microsoft.VisualBasic;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace backend.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Authorize]
 public class ProyectoController : ControllerBase
 {
     private readonly ProyectoRepository _proyectoRepository;
@@ -35,15 +38,20 @@ public class ProyectoController : ControllerBase
             BonitaActivityResponse activity;
             try
             {
-                var idProc = await _bonitaService.GetProcessIdByName("Proceso de realización de un proyecto");//recupera id del proceso
-                var caseId = await _bonitaService.StartProcessById(idProc);//inicia una instancia del mismo
+                var idProc = await _bonitaService.GetProcessIdByName("Proceso de realización de un proyecto");
+                var caseId = await _bonitaService.StartProcessById(idProc);
                 var proyectoJson = System.Text.Json.JsonSerializer.Serialize(proyectoDTO);
-                var success = await _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoJson, "java.lang.String");//le instancia variables de prueba
-                activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Cargar el proyecto");//recupera el id de la actividad
-                Console.WriteLine(activity);
-                Console.WriteLine($"Actividad: {activity.name} - {activity.id}");
-                var userId = await _bonitaService.GetUserIdByUserName("walter.bates");//hay que asignar un usuario a la actividad para completarla, recupera el id usuario en bonita
-                await _bonitaService.AssignActivityToUser(activity.id, userId);//le asigna la actividad al usuario --- esto era await _bonitaService....
+                var success = await _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoJson, "java.lang.String");
+                activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Cargar el proyecto");
+
+                var userName = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+                if (string.IsNullOrEmpty(userName))
+                {
+                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+                }
+
+                var userId = await _bonitaService.GetUserIdByUserName(userName);
+                await _bonitaService.AssignActivityToUser(activity.id, userId);
             }
             catch (Exception ex)
             {
