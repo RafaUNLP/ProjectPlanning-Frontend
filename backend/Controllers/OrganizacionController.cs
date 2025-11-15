@@ -3,12 +3,13 @@ using backend.Models;
 using backend.DTOs;
 using backend.Repositories;
 using backend.Services;
-using Microsoft.VisualBasic;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Authorize]
 public class OrganizacionController : ControllerBase
 {
     private readonly OrganizacionRepository _organizacionRepository;

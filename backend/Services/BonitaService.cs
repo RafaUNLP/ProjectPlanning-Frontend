@@ -1,11 +1,6 @@
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.ResponseCompression;
 using backend.DTOs;
-using System.Runtime.CompilerServices;
-
 namespace backend.Services;
 
 public class BonitaService
@@ -71,7 +66,7 @@ public class BonitaService
     {
         try
         {
-            var payload = new
+            BonitaVariable payload = new BonitaVariable
             {
                 value = value,
                 type = varType
@@ -88,6 +83,35 @@ public class BonitaService
         catch (Exception ex)
         {
             throw new Exception($"Error al establecer la variable '{variableName}' en el caso '{caseId}': {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Recupera el valor de una variable de proceso en un caso específico.
+    /// </summary>
+    /// <param name="caseId">Identificador del caso en Bonita</param>
+    /// <param name="variableName">Nombre de la variable de proceso a recuperar</param>
+    /// </param>
+    /// <returns>200: Respuesta vacia</returns>
+    public async Task<string> GetVariableByCaseIdAndName(long caseId, string variableName)
+    {
+        try
+        {
+           BonitaVariable response = await _request.DoRequestAsync<BonitaVariable>(HttpMethod.Get, $"API/bpm/caseVariable/{caseId}/{variableName}");
+
+            //si Bonita devuelve un JSON encerrado entre comillas
+            if (response.value.StartsWith("\"") && response.value.EndsWith("\""))
+                response.value = response.value.Substring(1, response.value.Length - 2);
+
+            //si hay escaping, desescapar
+            if (response.value.Contains("\\\""))
+                response.value = JsonSerializer.Deserialize<string>(response.value);
+
+           return response.value; //por fuera va a haber que hacer un casting
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error al recuperar la variable '{variableName}' en el caso '{caseId}': {ex.Message}");
         }
     }
 

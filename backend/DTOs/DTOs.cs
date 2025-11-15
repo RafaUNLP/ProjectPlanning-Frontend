@@ -197,3 +197,17 @@ public class BonitaSession
     public required string JSessionId { get; set; }
     public required string BonitaToken { get; set; }
 }
+
+public class BonitaVariable
+{
+    public string value { get; set; }
+    public string type { get; set; }
+}
+
+public class ObservacionDTO
+{
+    public Guid? Id { get; set; }
+    public string Descripcion { get; set; } = string.Empty;
+    public required Guid ColaboracionId { get; set; }
+    public required long CaseId { get; set; }//me parece indudable que necesito el caseId
+}
