@@ -122,7 +122,7 @@ public class AuditoriaController : ControllerBase
     {
         try
         {
-            var success = await _bonitaService.SetVariableByCase(caseId.ToString(), "terminar", "true", "boolean");
+            var success = await _bonitaService.SetVariableByCase(caseId.ToString(), "terminar", "true", "java.lang.Boolean");
             
             if (!success)
                 return StatusCode(502,"Falló la interacción con Bonita");
@@ -132,12 +132,17 @@ public class AuditoriaController : ControllerBase
             if (username.IsNullOrEmpty())
                 return NotFound("No se pudo identificar al usuario a partir del token JWT.");
 
+            bool finishedActivity = await _bonitaService.CompleteActivityAsync(caseId);
+
+            if (!finishedActivity)
+                return StatusCode(502,"Falló la interacción con Bonita para terminar la auditoría");
+
             await _auditoriaRepository.AddAsync(new Auditoria()
             {
                 Id = Guid.NewGuid(),
                 Fecha = DateTime.Now,
                 Username = username
-            }); 
+            });
             
             return Ok();
         }

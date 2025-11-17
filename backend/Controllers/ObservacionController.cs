@@ -31,8 +31,7 @@ public class ObservacionController : ControllerBase
             BonitaActivityResponse activity;
             try
             {
-                activity = await _bonitaService.GetActivityByCaseIdAndName(observacionDTO.CaseId.ToString(),"Realizar observacion");
-                await _bonitaService.SetVariableByCase(activity.id, "observacion", System.Text.Json.JsonSerializer.Serialize(observacionDTO), "java.lang.String");
+                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(observacionDTO.CaseId.ToString(),"Realizar observación");
 
                 var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userName))
@@ -41,7 +40,13 @@ public class ObservacionController : ControllerBase
                 }
 
                 var userId = await _bonitaService.GetUserIdByUserName(userName);
-                await _bonitaService.AssignActivityToUser(activity.id, userId);//necesario?
+                await _bonitaService.AssignActivityToUser(activity.id, userId);
+
+                await _bonitaService.SetVariableByCase(observacionDTO.CaseId.ToString(),"observacion",JsonSerializer.Serialize(new
+                {
+                    colaboracionId = observacionDTO.ColaboracionId,
+                    descripcion = observacionDTO.Descripcion
+                }),"java.lang.String");
 
             }
             catch (Exception ex)
@@ -91,7 +96,7 @@ public class ObservacionController : ControllerBase
             BonitaActivityResponse activity;
             try
             {
-                activity = await _bonitaService.GetActivityByCaseIdAndName(observacionDTO.CaseId.ToString(),"Resolver observacion");
+                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(observacionDTO.CaseId.ToString(),"Resolver observación");
 
                 var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userName))
@@ -100,7 +105,7 @@ public class ObservacionController : ControllerBase
                 }
 
                 var userId = await _bonitaService.GetUserIdByUserName(userName);
-                await _bonitaService.AssignActivityToUser(activity.id, userId);//necesario?
+                await _bonitaService.AssignActivityToUser(activity.id, userId);
 
             }
             catch (Exception ex)

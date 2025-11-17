@@ -242,6 +242,33 @@ public class BonitaService
     }
 
     // <summary>
+    // Recupera el taskId de la tarea acctiva según un caseId.
+    // </summary>
+    // <param name="caseId">Id de la instancia de un proceso</param>
+    // <returns>ID dela tarea en ejecicón de un proceso</returns>
+    public async Task<string?> GetCurrentTaskByCaseIdAsync(string caseId)
+    {
+        try
+        {
+            // Realizamos una petición GET al endpoint para obtener las tareas asociadas a un caseId
+            var taskResponse = await _request.DoRequestAsync<List<object>>(HttpMethod.Get, $"API/bpm/case/{caseId}/task");
+
+            // Si la respuesta contiene tareas, podemos retornar el ID de la tarea en ejecución.
+            if (taskResponse != null && taskResponse.Count > 0)
+            {
+                // En este caso, obtenemos la primera tarea. Si hay más, tal vez tengas que aplicar lógica para identificar la correcta.
+                return taskResponse.First().ToString();
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error al obtener la tarea en ejecución para el caseId {caseId}: {ex.Message}");
+        }
+    }
+
+    // <summary>
     // Recupera el ID de un usuario en Bonita a partir de su nombre de usuario.
     // </summary>
     // <param name="userName">Nombre de usuario en Bonita</param>
