@@ -17,10 +17,31 @@ public class BonitaService
     /// </summary>
     /// <param name="processName">Nombre del proceso en Bonita</param>
     /// <returns>ID del proceso en Bonita</returns>
+    /// OJO POR AHI NECESITAS USAR EL DE ABAJO (GetProcessIdByDisplayName)
     public async Task<string> GetProcessIdByName(string processName)
     {
 
         var response = await _request.DoRequestAsync<List<BonitaProcessResponse>>(HttpMethod.Get, $"API/bpm/process?f=name={processName}");
+        try
+        {
+            return response.First().id;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"No se encontró el proceso con nombre '{processName}': {ex.Message}");
+        }
+
+    }
+
+    /// <summary>
+    /// Recupera el ID de un proceso en Bonita a partir de su DISPLAY nombre.
+    /// </summary>
+    /// <param name="processName">Nombre de DISPLAY del proceso en Bonita</param>
+    /// <returns>ID del proceso en Bonita</returns>
+    public async Task<string> GetProcessIdByDisplayName(string processName)
+    {
+
+        var response = await _request.DoRequestAsync<List<BonitaProcessResponse>>(HttpMethod.Get, $"API/bpm/process?f=displayName={processName}");
         try
         {
             return response.First().id;
@@ -143,6 +164,7 @@ public class BonitaService
     /// <param name="caseId">Identificador del caso en Bonita</param>
     /// <param name="activityName">Nombre de la actividad a recuperar</param>
     /// <returns>Objeto BonitaActivityResponse que representa la actividad encontrada</returns>
+    /// OJO POR AHI NECESITAS USAR EL DE ABAJO (GetActivityByCaseIdAndDisplayName)
     public async Task<BonitaActivityResponse> GetActivityByCaseIdAndName(string caseId, string activityName)
     {
         // 1. Configuración de reintento
@@ -176,6 +198,47 @@ public class BonitaService
         }
 
         throw new Exception($"Timeout: La actividad '{activityName}' no apareció a tiempo para el caso '{caseId}'.");
+    }
+
+    /// <summary>
+    /// Recupera una actividad específica por DISPLAY NAME dentro de un caso por su nombre.
+    /// Implementa un mecanismo de reintento para manejar la latencia en la aparición de la actividad.
+    /// </summary>
+    /// <param name="caseId">Identificador del caso en Bonita</param>
+    /// <param name="activityDisplayName">Nombre de la actividad a recuperar</param>
+    /// <returns>Objeto BonitaActivityResponse que representa la actividad encontrada</returns>
+    public async Task<BonitaActivityResponse> GetActivityByCaseIdAndDisplayName(string caseId, string activityDisplayName)
+    {
+        // 1. Configuración de reintento
+        int attempts = 0;
+        int maxAttempts = 10; // Reintentar 10 veces
+        int delayMs = 500;    // Esperar 500ms entre intentos (5 segundos en total)
+
+        string endpoint = $"API/bpm/humanTask?f=caseId={caseId}&f=displayName={activityDisplayName}";
+
+        //Hay que hacer polling de la actividad porque a veces tarda en aparecer
+        while (attempts < maxAttempts)
+        {
+            try
+            {
+                var response = await _request.DoRequestAsync<List<BonitaActivityResponse>>(HttpMethod.Get, endpoint);
+
+                if (response != null && response.Any())
+                {
+                    Console.WriteLine($"Actividad encontrada en intento {attempts + 1}.");
+                    return response.First(); 
+                }
+
+                attempts++;
+                await Task.Delay(delayMs);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al buscar actividad por nombre: {ex.Message}");
+            }
+        }
+
+        throw new Exception($"Timeout: La actividad '{activityDisplayName}' no apareció a tiempo para el caso '{caseId}'.");
     }
 
     // <summary>

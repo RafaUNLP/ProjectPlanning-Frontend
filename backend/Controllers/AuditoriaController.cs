@@ -33,8 +33,15 @@ public class AuditoriaController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> RecuperarProyectosEnEjecucion()
     {
-        try
-        {
+            try
+            {
+            // Obtener el valor del header "bonitaJWT"
+            string? bonitaJwt = User.FindFirst("bonita_token")?.Value;
+            
+            if (string.IsNullOrEmpty(bonitaJwt))
+            {
+                return BadRequest("El header 'bonitaJWT' no está presente.");
+            }
             string? username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (username.IsNullOrEmpty())
@@ -56,24 +63,19 @@ public class AuditoriaController : ControllerBase
 
             BonitaActivityResponse activity;
             try
-            {
-                var idProc = await _bonitaService.GetProcessIdByName("Auditoría de un proyecto");
+            {   
+                var idProc = await _bonitaService.GetProcessIdByDisplayName("Auditoría de un proyecto");
                 var caseId = await _bonitaService.StartProcessById(idProc);
 
-                //es necesario? login en el cloud
-                activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Login en el Cloud");
                 var userId = await _bonitaService.GetUserIdByUserName(username);
-                bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);//completa la actividad de login
 
-                if(!finishedActivity)
-                    return StatusCode(502, "Falló la terminación de la actividad de Login en el Cloud en Bonita");
-
-                activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Desplegar los proyectos");
+                //Según Gemini, las tareas automáticas corren solas y terminan, por lo que no hay que iniciarlas
+                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Desplegar los proyectos");
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
                 
                 //conseguir la variable de proceso 'json' que tiene las colaboraciones
                 var jsonString = await _bonitaService.GetVariableByCaseIdAndName(caseId, "json");
-                var cloudColabs = JsonSerializer.Deserialize<List<Colaboracion>>(jsonString) ?? [];
+                var cloudColabs = JsonSerializer.Deserialize<List<Colaboracion>>(jsonString,new JsonSerializerOptions {PropertyNameCaseInsensitive = true}) ?? [];
 
                 //updatear las colabs? depende de qué hagamos cuando se asigne 1 y cuando ese 1 la realice
                 Colaboracion? actual;
@@ -92,7 +94,7 @@ public class AuditoriaController : ControllerBase
                 var etapas = await _etapaRepository.FilterAsync(e => cloudColabs.Select(c => c.EtapaId).Contains(e.Id));
                 var proyectos = await _proyectoRepository.FilterAsync(p => etapas.Select(e => e.ProyectoId).Contains(p.Id),includes:"Etapas,Etapas.Colaboracion,Etapas.Colaboracion.Observaciones");
                 
-                finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);
+                bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);
 
                 if (finishedActivity)
                     return Ok( new

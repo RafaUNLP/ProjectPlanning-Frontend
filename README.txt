@@ -53,3 +53,16 @@ Hay un docker compose para produccion y otro para dev, para levantarlo:
 
 ------
 Para que ande la conexion de bonita al cloud, hay que pegarle al endpoint antes asi "se despierta", parece que bonita tiene un timeout corto y falla la tarea
+
+NOTA: en Mac y Windows se usa 'http://host.docker.internal:49828/bonita/' para referenciar a Bonita, pero Linux no (por eso hay un comentario de qué link poner para que funcione en Linux)
+
+### Para atachear el debugger con docker VERSION LINUX
+- tener instalada la extension Dev Container
+- Ir a la extension -> Container backend en una nueva ventana -> open folder '/src/backend'
+- Si no tiene la extension de C#, instalarse al contenedor
+- En la nueva ventana de VS Code -> Ir a debugger
+- Al lado del boton play -> .Net Core Attach
+- Seleccionar el proceso "backend" (si no aparece es porque algo no compila en el codigo y debe arreglarse)
+- Enjoy
+- TIP: si cambias código, hacelo en la ventana del contenedor. Una vez cambiado, cerrás esa ventana y haces un 'docker restart' del
+    contenedor del backend y volves a abrirlo y debuggear

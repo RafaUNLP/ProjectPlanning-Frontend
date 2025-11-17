@@ -6,12 +6,18 @@ using backend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Net.Http;
-using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
-using System;
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+// Configurar JSON con case-insensitive
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    }
+);
 
 // --- Configuración de JWT ---
 // 1. Añadir configuración a appsettings.json (ver abajo)
@@ -55,7 +61,34 @@ builder.Services.AddHttpClient("bonitaClient")
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    // Configuración de Swagger para usar JWT
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Ingrese 'Bearer' [espacio] seguido del token JWT en el campo de autorización",
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
+});
 
 builder.Services.AddCors(options =>
 {
@@ -66,18 +99,6 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
-// builder.Services.AddSwaggerGen(options =>
-// {
-//     // Configurar Swagger para usar OpenAPI 3.0 y especificar la versión del API
-//     options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-//     {
-//         Title = "Proyect Planning", // Nombre de la API
-//         Version = "v1",
-//     });
-//     // Genera el archivo XML para poder documentar el Swagger
-//     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-//     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-// });
 
 //Conexión a la BD
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -104,7 +125,8 @@ builder.Services.AddScoped<RequestHelper>(sp =>
 {
     // Obtener un HttpClient de la factoría con nombre "bonitaClient"
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("bonitaClient");
-    httpClient.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");
+    //httpClient.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");//para Mac y Windows
+    httpClient.BaseAddress = new Uri("http://172.17.0.1:49828/bonita/");   //para Linux
 
     // Obtener el HttpContext actual
     var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext;
