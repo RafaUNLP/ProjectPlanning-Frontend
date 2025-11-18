@@ -9,6 +9,7 @@ public class Proyecto
     public required string Descripcion { get; set; }
     public required Guid OrganizacionId { get; set; }
     [Column(TypeName = "timestamp")] public required DateTime Fecha { get; set; }
+    public long BonitaCaseId { get; set; }
     public List<Etapa> Etapas { get; set; } = [];
 
 }
