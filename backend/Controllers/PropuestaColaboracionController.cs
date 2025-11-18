@@ -99,4 +99,37 @@ public class PropuestaColaboracionController : ControllerBase
             return StatusCode(500, ex.Message);
         }
     }
+
+    /// <summary>
+    /// Obtiene todas las Propuestas de Colaboración asociadas a un Proyecto específico.
+    /// </summary>
+    /// <param name="proyectoId">El Guid del Proyecto del cual se quieren ver las propuestas.</param>
+    /// <returns>Una lista de Propuestas de Colaboración.</returns>
+    [HttpGet("proyecto/{proyectoId}")]
+    public async Task<IActionResult> GetPropuestasPorProyecto(Guid proyectoId)
+    {
+        try
+        {
+            // 1. Validar que el proyecto existe (buena práctica)
+            bool proyectoExiste = await _proyectoRepository.Exist(p => p.Id == proyectoId);
+            if (!proyectoExiste)
+            {
+                return NotFound($"No se encontró el proyecto con ID: {proyectoId}");
+            }
+
+            // 2. Usar el repositorio de Propuestas para filtrar
+            //    Esto mágicamente hace un JOIN con la tabla Etapa y filtra por ProyectoId.
+            var propuestas = await _propuestaRepository.FilterAsync(
+                filtro: p => p.Etapa.ProyectoId == proyectoId,
+                includes: "Etapa,OrganizacionProponente" // Incluimos datos de la Etapa y la Org
+            );
+
+            // 3. Devolver la lista de propuestas
+            return Ok(propuestas);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
 }

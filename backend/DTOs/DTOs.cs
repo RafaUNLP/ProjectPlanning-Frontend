@@ -210,6 +210,7 @@ public class ObservacionDTO
     public string Descripcion { get; set; } = string.Empty;
     public required Guid ColaboracionId { get; set; }
     public required long CaseId { get; set; }//me parece indudable que necesito el caseId
+}
 public class PropuestaColaboracionDTO
 {
     [Required]
