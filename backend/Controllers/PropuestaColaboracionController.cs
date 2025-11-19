@@ -215,7 +215,7 @@ public class PropuestaColaboracionController : ControllerBase
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
 
                 var colaboracionJson = JsonSerializer.Serialize(colaboracionPayload);
-                await _bonitaService.SetVariableByCase(caseId.ToString(), "colaboracion", colaboracionJson, "java.lang.String");
+                await _bonitaService.SetVariableByCase(caseId.ToString(), "colaboracionIn", colaboracionJson, "java.lang.String");
 
                 
             }
