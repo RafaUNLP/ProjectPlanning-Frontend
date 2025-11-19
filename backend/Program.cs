@@ -11,13 +11,13 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 
-// Configurar JSON con case-insensitive
-builder.Services.AddControllersWithViews()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-    }
-);
+// // Configurar JSON con case-insensitive
+// builder.Services.AddControllersWithViews()
+//     .AddJsonOptions(options =>
+//     {
+//         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+//     }
+// );
 
 // --- Configuración de JWT ---
 // 1. Añadir configuración a appsettings.json (ver abajo)
@@ -119,14 +119,15 @@ builder.Services.AddScoped<ColaboracionRepository>();
 builder.Services.AddScoped<OrganizacionRepository>();
 builder.Services.AddScoped<AuditoriaRepository>();
 builder.Services.AddScoped<ObservacionRepository>();
+builder.Services.AddScoped<PropuestaColaboracionRepository>();
 
 //Añado los servicios
 builder.Services.AddScoped<RequestHelper>(sp =>
 {
     // Obtener un HttpClient de la factoría con nombre "bonitaClient"
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("bonitaClient");
-    //httpClient.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");//para Mac y Windows
-    httpClient.BaseAddress = new Uri("http://172.17.0.1:49828/bonita/");   //para Linux
+    httpClient.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");//para Mac y Windows
+    //httpClient.BaseAddress = new Uri("http://172.17.0.1:49828/bonita/");   //para Linux
 
     // Obtener el HttpContext actual
     var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext;

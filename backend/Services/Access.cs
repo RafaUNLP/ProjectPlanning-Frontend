@@ -19,8 +19,8 @@ public class Access
             AllowAutoRedirect = false
         };
         _client = new HttpClient(handler);
-        //_client.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");   //para Mac y Windows
-        _client.BaseAddress = new Uri("http://172.17.0.1:49828/bonita/");   //para Linux
+        _client.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");   //para Mac y Windows
+        //_client.BaseAddress = new Uri("http://172.17.0.1:49828/bonita/");   //para Linux
     }
 
     public async Task<BonitaSession?> LoginAsync(string username, string password)

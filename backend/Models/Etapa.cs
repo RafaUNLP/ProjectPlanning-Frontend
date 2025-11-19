@@ -11,5 +11,6 @@ public class Etapa{
     public required string Descripcion { get; set; }
     [Column(TypeName = "timestamp")] public required DateTime FechaInicio { get; set; }
     [Column(TypeName = "timestamp")] public required DateTime FechaFin { get; set; }
+    public required bool RequiereColaboracion { get; set; }
     public Colaboracion? Colaboracion { get; set; }
 }

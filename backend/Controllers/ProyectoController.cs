@@ -35,10 +35,11 @@ public class ProyectoController : ControllerBase
                 return BadRequest("La fecha de fin de todas las etapas debe ser mayor a la fecha de inicio de la misma.");
 
             BonitaActivityResponse activity;
+            long caseId;
             try
             {
                 var idProc = await _bonitaService.GetProcessIdByName("Proceso de realización de un proyecto");
-                var caseId = await _bonitaService.StartProcessById(idProc);
+                caseId = await _bonitaService.StartProcessById(idProc);
                 var proyectoJson = System.Text.Json.JsonSerializer.Serialize(proyectoDTO);
                 var success = await _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoJson, "java.lang.String");
                 activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Cargar el proyecto");
@@ -64,6 +65,7 @@ public class ProyectoController : ControllerBase
                 Descripcion = proyectoDTO.Descripcion,
                 OrganizacionId = proyectoDTO.OrganizacionId,
                 Fecha = DateTime.Now,
+                BonitaCaseId = caseId,
                 Etapas = proyectoDTO.Etapas.Select(e => new Etapa()
                 {
                     Id = Guid.NewGuid(),
@@ -71,13 +73,7 @@ public class ProyectoController : ControllerBase
                     Descripcion = e.Descripcion,
                     FechaInicio = e.FechaInicio.ToLocalTime(),
                     FechaFin = e.FechaFin.ToLocalTime(),
-                    Colaboracion = (e.CategoriaColaboracion == null) ? null : new Colaboracion()
-                    {
-                        Id = Guid.NewGuid(),
-                        CategoriaColaboracion = e.CategoriaColaboracion.Value,
-                        Descripcion = e.DescripcionColaboracion ?? string.Empty,
-                        EtapaId = e.Id ?? Guid.Empty,
-                    }
+                    RequiereColaboracion = e.RequiereColaboracion,
                 }).ToList()
             });
 

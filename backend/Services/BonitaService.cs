@@ -169,7 +169,7 @@ public class BonitaService
     {
         // 1. Configuración de reintento
         int attempts = 0;
-        int maxAttempts = 10; // Reintentar 10 veces
+        int maxAttempts = 20; // Reintentar 20 veces
         int delayMs = 500;    // Esperar 500ms entre intentos (5 segundos en total)
 
         string encodedName = System.Net.WebUtility.UrlEncode(activityName);

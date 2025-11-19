@@ -84,7 +84,7 @@ public class EtapaDTO
     /// <summary>
     /// Categoría de colaboración para la etapa.
     /// </summary>
-    public CategoriaColaboracion? CategoriaColaboracion { get; set; }
+    public bool RequiereColaboracion { get; set; }
 
     /// <summary>
     /// Descripción adicional sobre la colaboración.
@@ -210,4 +210,33 @@ public class ObservacionDTO
     public string Descripcion { get; set; } = string.Empty;
     public required Guid ColaboracionId { get; set; }
     public required long CaseId { get; set; }//me parece indudable que necesito el caseId
+}
+public class PropuestaColaboracionDTO
+{
+    [Required]
+    public required Guid EtapaId { get; set; }
+
+    [Required]
+    public required Guid OrganizacionProponenteId { get; set; }
+
+    [Required]
+    public required string Descripcion { get; set; }
+
+    [Required]
+    public required CategoriaColaboracion CategoriaColaboracion { get; set; }
+
+    [Required]
+    public bool EsParcial { get; set; }
+}
+
+public class CrearColaboracionDTO
+{
+    public required string Proyecto { get; set; }
+    public required string Descripcion { get; set; }
+    public required CategoriaColaboracion CategoriaColaboracion { get; set; }
+    public required Guid ProyectoId { get; set; }
+    public required Guid EtapaId { get; set; }
+    public required Guid OrganizacionProyectoId { get; set; } // Dueño del proyecto
+    public required Guid OrganizacionComprometidaId { get; set; } // Quien ayuda
+    public DateTime? FechaRealizacion { get; set; } // Nullable para inicializar vacío
 }
