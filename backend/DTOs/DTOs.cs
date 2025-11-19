@@ -228,3 +228,15 @@ public class PropuestaColaboracionDTO
     [Required]
     public bool EsParcial { get; set; }
 }
+
+public class CrearColaboracionDTO
+{
+    public required string Proyecto { get; set; }
+    public required string Descripcion { get; set; }
+    public required CategoriaColaboracion CategoriaColaboracion { get; set; }
+    public required Guid ProyectoId { get; set; }
+    public required Guid EtapaId { get; set; }
+    public required Guid OrganizacionProyectoId { get; set; } // Dueño del proyecto
+    public required Guid OrganizacionComprometidaId { get; set; } // Quien ayuda
+    public DateTime? FechaRealizacion { get; set; } // Nullable para inicializar vacío
+}

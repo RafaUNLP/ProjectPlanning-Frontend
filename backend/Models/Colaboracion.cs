@@ -7,8 +7,11 @@ public class Colaboracion //CHEQUEAR qué se necesita del cloud, incorporar obse
 {
     [Key]
     public Guid Id { get; set; }
+    public required string ProyectoNombre { get; set; } = string.Empty;
     public required string Descripcion { get; set; } = string.Empty;
     public required CategoriaColaboracion CategoriaColaboracion { get; set; }
+
+    public required Guid ProyectoId { get; set; }
     public required Guid EtapaId { get; set; }
     public Guid? OrganizacionComprometidaId { get; set; } //tendrá valor cuando alguien se haga cargo de ella
     /*En el proceso de auditoría, tendremos que buscar la organizacion por Id y mandar  la colaboracion

@@ -5,6 +5,7 @@ using backend.Repositories;
 using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace backend.Controllers;
 
@@ -17,17 +18,20 @@ public class PropuestaColaboracionController : ControllerBase
     private readonly PropuestaColaboracionRepository _propuestaRepository;
     private readonly EtapaRepository _etapaRepository;
     private readonly ProyectoRepository _proyectoRepository;
+    private readonly ColaboracionRepository _colaboracionRepository;
 
     public PropuestaColaboracionController(
         BonitaService bonitaService,
         PropuestaColaboracionRepository propuestaRepository,
         EtapaRepository etapaRepository,
-        ProyectoRepository proyectoRepository)
+        ProyectoRepository proyectoRepository,
+        ColaboracionRepository colaboracionRepository)
     {
         _bonitaService = bonitaService;
         _propuestaRepository = propuestaRepository;
         _etapaRepository = etapaRepository;
         _proyectoRepository = proyectoRepository;
+        _colaboracionRepository = colaboracionRepository;
     }
 
     [HttpPost]
@@ -50,6 +54,12 @@ public class PropuestaColaboracionController : ControllerBase
             if (proyecto == null)
             {
                 return NotFound($"No se encontró el proyecto asociado a la etapa.");
+            }
+
+            bool yaCubierta = await _colaboracionRepository.Exist(c => c.EtapaId == propuestaDTO.EtapaId);
+            if (yaCubierta)
+            {
+                return Conflict("La etapa ya tiene una colaboración aceptada, no se pueden proponer más compromisos.");
             }
 
             long caseId = proyecto.BonitaCaseId;
@@ -110,22 +120,120 @@ public class PropuestaColaboracionController : ControllerBase
     {
         try
         {
-            // 1. Validar que el proyecto existe (buena práctica)
             bool proyectoExiste = await _proyectoRepository.Exist(p => p.Id == proyectoId);
             if (!proyectoExiste)
             {
                 return NotFound($"No se encontró el proyecto con ID: {proyectoId}");
             }
 
-            // 2. Usar el repositorio de Propuestas para filtrar
-            //    Esto mágicamente hace un JOIN con la tabla Etapa y filtra por ProyectoId.
             var propuestas = await _propuestaRepository.FilterAsync(
                 filtro: p => p.Etapa.ProyectoId == proyectoId,
-                includes: "Etapa,OrganizacionProponente" // Incluimos datos de la Etapa y la Org
+                includes: "Etapa,OrganizacionProponente" 
             );
 
-            // 3. Devolver la lista de propuestas
             return Ok(propuestas);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+
+    /// <summary>
+    /// Acepta una Propuesta de Colaboración, creando una Colaboracion
+    /// y avanzando el proceso en Bonita.
+    /// </summary>
+    /// <param name="propuestaId">El Guid de la PropuestaColaboracion a aceptar.</param>
+    /// <returns>La nueva Colaboracion que se ha creado (en memoria).</returns>
+    [HttpPost("aceptar/{propuestaId}")]
+    public async Task<IActionResult> AceptarPropuesta(Guid propuestaId)
+    {
+        try
+        {
+            //voy a tener que ver si ya existe una propuesta aceptada para la misma etapa y organización comprometida
+            PropuestaColaboracion? propuesta = await _propuestaRepository.GetAsyncWithIncludes(propuestaId, "Etapa");
+            if (propuesta == null)
+            {
+                return NotFound($"No se encontró la propuesta con ID: {propuestaId}");
+            }
+            if (propuesta.Etapa == null)
+            {
+                return NotFound("La propuesta no está asociada a ninguna etapa.");
+            }
+
+            Proyecto? proyecto = await _proyectoRepository.GetAsync(propuesta.Etapa.ProyectoId);
+            if (proyecto == null)
+            {
+                return NotFound($"No se encontró el proyecto asociado a la propuesta.");
+            }
+
+            bool yaExiste = await _colaboracionRepository.Exist(c => c.EtapaId == propuesta.EtapaId);
+            if (yaExiste)
+            {
+                return Conflict("Ya existe una colaboración aceptada para la etapa asociada a esta propuesta.");
+            }
+            
+            long caseId = proyecto.BonitaCaseId;
+
+            Colaboracion colaboracion = new Colaboracion
+            {
+                Id = Guid.NewGuid(),
+                ProyectoNombre = proyecto.Nombre,
+                Descripcion = propuesta.Descripcion,
+                CategoriaColaboracion = propuesta.CategoriaColaboracion,
+                ProyectoId = proyecto.Id,
+                EtapaId = propuesta.EtapaId,
+                OrganizacionComprometidaId = propuesta.OrganizacionProponenteId,
+                FechaRealizacion = null 
+            };
+
+            await _colaboracionRepository.AddAsync(colaboracion);
+
+            var colaboracionPayload = new CrearColaboracionDTO
+            {
+                Proyecto = proyecto.Nombre,
+                Descripcion = propuesta.Descripcion,
+                CategoriaColaboracion = propuesta.CategoriaColaboracion,
+                ProyectoId = proyecto.Id,
+                EtapaId = propuesta.EtapaId,
+                OrganizacionProyectoId = proyecto.OrganizacionId, 
+                OrganizacionComprometidaId = propuesta.OrganizacionProponenteId,                 
+                FechaRealizacion = null 
+            };
+
+            BonitaActivityResponse activity;
+            try
+            {
+                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Evaluar propuestas de colaboración");
+                var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userName))
+                {
+                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+                }
+                var userId = await _bonitaService.GetUserIdByUserName(userName);
+                await _bonitaService.AssignActivityToUser(activity.id, userId);
+
+                var colaboracionJson = JsonSerializer.Serialize(colaboracionPayload);
+                await _bonitaService.SetVariableByCase(caseId.ToString(), "colaboracion", colaboracionJson, "java.lang.String");
+
+                
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(502, $"Error en la integración con Bonita: {ex.Message}");
+            }
+
+            propuesta.Estado = EstadoPropuestaColaboracion.Aceptada;
+            await _propuestaRepository.UpdateAsync(propuesta, propuesta);
+            bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);
+
+            if (!finishedActivity)
+            {
+                return StatusCode(502, "Falló la terminación de la actividad 'Evaluar propuestas' en Bonita.");
+            }
+
+            return Ok(colaboracionPayload);
         }
         catch (Exception ex)
         {
