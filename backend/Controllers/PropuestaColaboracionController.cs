@@ -68,14 +68,11 @@ public class PropuestaColaboracionController : ControllerBase
             try
             {
                 activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Proponer compromiso con una etapa");
-
-                var userName = User.FindFirst(ClaimTypes.NameIdentifier).Value;
-                if (string.IsNullOrEmpty(userName))
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
                 }
-
-                var userId = await _bonitaService.GetUserIdByUserName(userName);
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
             }
             catch (Exception ex)
@@ -211,7 +208,11 @@ public class PropuestaColaboracionController : ControllerBase
                 {
                     return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
                 }
-                var userId = await _bonitaService.GetUserIdByUserName(userName);
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+                }
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
 
                 var colaboracionJson = JsonSerializer.Serialize(colaboracionPayload);

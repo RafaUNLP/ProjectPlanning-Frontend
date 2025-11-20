@@ -67,7 +67,11 @@ public class AuditoriaController : ControllerBase
                 var idProc = await _bonitaService.GetProcessIdByDisplayName("Auditoría de un proyecto");
                 var caseId = await _bonitaService.StartProcessById(idProc);
 
-                var userId = await _bonitaService.GetUserIdByUserName(username);
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+                }
 
                 //Según Gemini, las tareas automáticas corren solas y terminan, por lo que no hay que iniciarlas
                 activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Desplegar los proyectos");

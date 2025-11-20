@@ -126,8 +126,7 @@ builder.Services.AddScoped<RequestHelper>(sp =>
 {
     // Obtener un HttpClient de la factoría con nombre "bonitaClient"
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("bonitaClient");
-    httpClient.BaseAddress = new Uri("http://host.docker.internal:49828/bonita/");//para Mac y Windows
-    //httpClient.BaseAddress = new Uri("http://172.17.0.1:49828/bonita/");   //para Linux
+    httpClient.BaseAddress = new Uri(builder.Configuration["Bonita:BaseUrl"]);
 
     // Obtener el HttpContext actual
     var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext;

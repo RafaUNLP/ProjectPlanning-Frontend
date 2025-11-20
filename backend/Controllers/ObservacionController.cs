@@ -39,7 +39,11 @@ public class ObservacionController : ControllerBase
                     return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
                 }
 
-                var userId = await _bonitaService.GetUserIdByUserName(userName);
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+                }
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
 
                 await _bonitaService.SetVariableByCase(observacionDTO.CaseId.ToString(),"observacion",JsonSerializer.Serialize(new
@@ -104,7 +108,11 @@ public class ObservacionController : ControllerBase
                     return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
                 }
 
-                var userId = await _bonitaService.GetUserIdByUserName(userName);
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+                }
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
 
             }
