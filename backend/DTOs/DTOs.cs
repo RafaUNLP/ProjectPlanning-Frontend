@@ -41,7 +41,7 @@ public class ProyectoDTO
     /// <summary>
     /// POR AHORA exijo el ID de la org dueña, más adelante metemos un login con JWT local y lo toma de ahí
     /// </summary>
-    [Required] public required Guid OrganizacionId { get; set; }
+    [Required] public required long OrganizacionId { get; set; }
 
     /// <summary>
     /// Lista de etapas del proyecto. Este campo es obligatorio.
@@ -217,7 +217,7 @@ public class PropuestaColaboracionDTO
     public required Guid EtapaId { get; set; }
 
     [Required]
-    public required Guid OrganizacionProponenteId { get; set; }
+    public required long OrganizacionProponenteId { get; set; }
 
     [Required]
     public required string Descripcion { get; set; }
@@ -236,7 +236,7 @@ public class CrearColaboracionDTO
     public required CategoriaColaboracion CategoriaColaboracion { get; set; }
     public required Guid ProyectoId { get; set; }
     public required Guid EtapaId { get; set; }
-    public required Guid OrganizacionProyectoId { get; set; } // Dueño del proyecto
-    public required Guid OrganizacionComprometidaId { get; set; } // Quien ayuda
+    public required long OrganizacionProyectoId { get; set; } // Dueño del proyecto
+    public required long OrganizacionComprometidaId { get; set; } // Quien ayuda
     public DateTime? FechaRealizacion { get; set; } // Nullable para inicializar vacío
 }
