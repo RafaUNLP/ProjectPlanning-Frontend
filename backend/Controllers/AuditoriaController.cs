@@ -16,15 +16,17 @@ namespace backend.Controllers;
 public class AuditoriaController : ControllerBase
 {
     private readonly ProyectoRepository _proyectoRepository;
-    private readonly ColaboracionRepository _colaboracionRepository;
+    // private readonly ColaboracionRepository _colaboracionRepository;
     private readonly AuditoriaRepository _auditoriaRepository;
     private readonly EtapaRepository _etapaRepository;
+    private readonly ObservacionRepository _observacionRepository;
     private readonly BonitaService _bonitaService;
-    public AuditoriaController(ProyectoRepository proyectoRepository, ColaboracionRepository colaboracionoRepository,
+    public AuditoriaController(ProyectoRepository proyectoRepository, ObservacionRepository observacionRepository, //ColaboracionRepository colaboracionoRepository,
                                 AuditoriaRepository auditoriaRepository, EtapaRepository etapaRepository, BonitaService bonitaService)
     {
         _proyectoRepository = proyectoRepository;
-        _colaboracionRepository = colaboracionoRepository;
+        _observacionRepository = observacionRepository;
+        // _colaboracionRepository = colaboracionoRepository;
         _auditoriaRepository = auditoriaRepository;
         _etapaRepository = etapaRepository;
         _bonitaService = bonitaService;
@@ -79,24 +81,61 @@ public class AuditoriaController : ControllerBase
                 
                 //conseguir la variable de proceso 'json' que tiene las colaboraciones
                 var jsonString = await _bonitaService.GetVariableByCaseIdAndName(caseId, "json");
-                var cloudColabs = JsonSerializer.Deserialize<List<Colaboracion>>(jsonString,new JsonSerializerOptions {PropertyNameCaseInsensitive = true}) ?? [];
+                var cloudColabs = JsonSerializer.Deserialize<List<ColaboracionDTO>>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ColaboracionDTO>();
 
-                //updatear las colabs? depende de qué hagamos cuando se asigne 1 y cuando ese 1 la realice
-                Colaboracion? actual;
-                foreach (Colaboracion cloudColab in cloudColabs)
+                var etapaIds = cloudColabs.Select(c => c.EtapaId).ToList();
+                var proyectosLocales = await _proyectoRepository.FilterAsync(
+                    p => p.Etapas.Any(e => etapaIds.Contains(e.Id)), 
+                    includes: "Etapas"
+                );
+
+                var colabIds = cloudColabs.Where(c => c.Id.HasValue).Select(c => c.Id.Value).ToList();
+                var observacionesLocales = await _observacionRepository.FilterAsync(
+                    o => colabIds.Contains(o.ColaboracionId)
+                );
+
+                var proyectosResponse = proyectosLocales.Select(p => new
                 {
-                    actual = await _colaboracionRepository.GetAsync(cloudColab.Id);
-                    if (actual != null)
-                    {
-                        actual.OrganizacionComprometidaId = cloudColab.OrganizacionComprometidaId;
-                        actual.FechaRealizacion = cloudColab.FechaRealizacion;
-                        actual.Observaciones = cloudColab.Observaciones;
-                    }
-                }
+                    p.Id,
+                    p.Nombre,
+                    p.Descripcion,
+                    p.OrganizacionId,
+                    p.Fecha,
+                    Etapas = p.Etapas
+                        .Where(e => etapaIds.Contains(e.Id)) // Filtramos solo las etapas que tienen colaboración activa
+                        .Select(e => {
+                            // A. Buscamos la colaboración del cloud que corresponde a esta etapa
+                            var colabDto = cloudColabs.FirstOrDefault(c => c.EtapaId == e.Id);
 
-                //recupero las etapas y de ahí los proyectos para ir al front
-                var etapas = await _etapaRepository.FilterAsync(e => cloudColabs.Select(c => c.EtapaId).Contains(e.Id));
-                var proyectos = await _proyectoRepository.FilterAsync(p => etapas.Select(e => e.ProyectoId).Contains(p.Id),includes:"Etapas,Etapas.Colaboracion,Etapas.Colaboracion.Observaciones");
+                            // B. Si existe, le inyectamos sus observaciones locales
+                            if (colabDto != null && colabDto.Id.HasValue)
+                            {
+                                colabDto.Observaciones = observacionesLocales
+                                    .Where(o => o.ColaboracionId == colabDto.Id.Value)
+                                    .Select(o => new ObservacionDTO 
+                                    {                                         
+                                        Id = o.Id,
+                                        Descripcion = o.Descripcion,
+                                        ColaboracionId = o.ColaboracionId,
+                                        FechaCarga = o.FechaCarga,
+                                        FechaRealizacion = o.FechaRealizacion,
+                                        
+                                    })
+                                    .ToList();
+                            }
+
+                            // C. Retornamos la estructura combinada
+                            return new 
+                            {
+                                e.Id,
+                                e.Nombre,
+                                e.Descripcion,
+                                e.FechaInicio,
+                                e.FechaFin,
+                                Colaboracion = colabDto // Aquí va el objeto del cloud enriquecido con observaciones
+                            };
+                        }).ToList()
+                }).ToList();
                 
                 bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);
 
@@ -104,10 +143,25 @@ public class AuditoriaController : ControllerBase
                     return Ok( new
                         {
                             caseId,
-                            proyectos
-                        });//retorno los proyectos y el caseId para poder finalizar la auditoria
+                            proyectos = proyectosResponse
+                        });
                 else
                     return StatusCode(502,"Falló la terminación de la actividad que recupera la colaboraciones en Bonita");
+
+                // //recupero las etapas y de ahí los proyectos para ir al front
+                // var etapas = await _etapaRepository.FilterAsync(e => cloudColabs.Select(c => c.EtapaId).Contains(e.Id));
+                // var proyectos = await _proyectoRepository.FilterAsync(p => etapas.Select(e => e.ProyectoId).Contains(p.Id),includes:"Etapas,Etapas.Colaboracion,Etapas.Colaboracion.Observaciones");
+                
+                // bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);
+
+                // if (finishedActivity)
+                //     return Ok( new
+                //         {
+                //             caseId,
+                //             proyectos
+                //         });//retorno los proyectos y el caseId para poder finalizar la auditoria
+                // else
+                //     return StatusCode(502,"Falló la terminación de la actividad que recupera la colaboraciones en Bonita");
             }
             catch (Exception ex)
             {

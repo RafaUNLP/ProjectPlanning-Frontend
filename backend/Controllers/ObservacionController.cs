@@ -102,12 +102,6 @@ public class ObservacionController : ControllerBase
             {
                 activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(observacionDTO.CaseId.ToString(),"Resolver observación");
 
-                var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userName))
-                {
-                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
-                }
-
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {

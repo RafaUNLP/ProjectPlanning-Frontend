@@ -124,7 +124,7 @@ public class OrganizacionDTO //para ocultar la contraseña
     /// <summary>
     /// Listado de las colaboraciones con las que se comprometió
     /// </summary>
-    public List<Colaboracion> ColaboracionesComprometida { get; set; } = [];
+    public List<ColaboracionDTO> ColaboracionesComprometida { get; set; } = [];
 }
 
 public class BonitaProcessResponse
@@ -209,7 +209,10 @@ public class ObservacionDTO
     public Guid? Id { get; set; }
     public string Descripcion { get; set; } = string.Empty;
     public required Guid ColaboracionId { get; set; }
-    public required long CaseId { get; set; }//me parece indudable que necesito el caseId
+    public required DateTime FechaCarga { get; set; }
+    public DateTime? FechaRealizacion { get; set; } //será null si no se realizó
+    public bool Realizada {get; set;}
+    public long? CaseId { get; set; } 
 }
 public class PropuestaColaboracionDTO
 {
@@ -240,3 +243,22 @@ public class CrearColaboracionDTO
     public required long OrganizacionComprometidaId { get; set; } // Quien ayuda
     public DateTime? FechaRealizacion { get; set; } // Nullable para inicializar vacío
 }
+
+public class ColaboracionDTO
+{
+    public Guid? Id { get; set; }
+    public required string Proyecto { get; set; }
+    public required string Descripcion { get; set; }
+    public required CategoriaColaboracion CategoriaColaboracion { get; set; }
+    public required Guid ProyectoId { get; set; }
+    public required Guid EtapaId { get; set; }
+    public required long OrganizacionProyectoId { get; set; } // Dueño del proyecto
+    public required long OrganizacionComprometidaId { get; set; } // Quien ayuda
+    public DateTime? FechaRealizacion { get; set; } // Nullable para inicializar vacío
+    public List<ObservacionDTO> Observaciones { get; set; } = [];
+}
+
+public enum CategoriaColaboracion{
+    Economica = 1, Material = 2, ManoDeObra = 3, Otra = 4
+}
+

@@ -18,20 +18,20 @@ public class PropuestaColaboracionController : ControllerBase
     private readonly PropuestaColaboracionRepository _propuestaRepository;
     private readonly EtapaRepository _etapaRepository;
     private readonly ProyectoRepository _proyectoRepository;
-    private readonly ColaboracionRepository _colaboracionRepository;
+    // private readonly ColaboracionRepository _colaboracionRepository;
 
     public PropuestaColaboracionController(
         BonitaService bonitaService,
         PropuestaColaboracionRepository propuestaRepository,
         EtapaRepository etapaRepository,
-        ProyectoRepository proyectoRepository,
-        ColaboracionRepository colaboracionRepository)
+        ProyectoRepository proyectoRepository)
+        //ColaboracionRepository colaboracionRepository)
     {
         _bonitaService = bonitaService;
         _propuestaRepository = propuestaRepository;
         _etapaRepository = etapaRepository;
         _proyectoRepository = proyectoRepository;
-        _colaboracionRepository = colaboracionRepository;
+        //_colaboracionRepository = colaboracionRepository;
     }
 
     [HttpPost]
@@ -55,9 +55,9 @@ public class PropuestaColaboracionController : ControllerBase
             {
                 return NotFound($"No se encontró el proyecto asociado a la etapa.");
             }
-
-            bool yaCubierta = await _colaboracionRepository.Exist(c => c.EtapaId == propuestaDTO.EtapaId);
-            if (yaCubierta)
+            
+            bool yaExiste = await _propuestaRepository.Exist(p => p.EtapaId == propuestaDTO.EtapaId && p.Estado == EstadoPropuestaColaboracion.Aceptada);
+            if (yaExiste)
             {
                 return Conflict("La etapa ya tiene una colaboración aceptada, no se pueden proponer más compromisos.");
             }
@@ -125,7 +125,7 @@ public class PropuestaColaboracionController : ControllerBase
 
             var propuestas = await _propuestaRepository.FilterAsync(
                 filtro: p => p.Etapa.ProyectoId == proyectoId,
-                includes: "Etapa,OrganizacionProponente" 
+                includes: "Etapa" 
             );
 
             return Ok(propuestas);
@@ -165,7 +165,7 @@ public class PropuestaColaboracionController : ControllerBase
                 return NotFound($"No se encontró el proyecto asociado a la propuesta.");
             }
 
-            bool yaExiste = await _colaboracionRepository.Exist(c => c.EtapaId == propuesta.EtapaId);
+            bool yaExiste = await _propuestaRepository.Exist(p => p.EtapaId == propuesta.EtapaId && p.Estado == EstadoPropuestaColaboracion.Aceptada);
             if (yaExiste)
             {
                 return Conflict("Ya existe una colaboración aceptada para la etapa asociada a esta propuesta.");
@@ -173,19 +173,6 @@ public class PropuestaColaboracionController : ControllerBase
             
             long caseId = proyecto.BonitaCaseId;
 
-            Colaboracion colaboracion = new Colaboracion
-            {
-                Id = Guid.NewGuid(),
-                ProyectoNombre = proyecto.Nombre,
-                Descripcion = propuesta.Descripcion,
-                CategoriaColaboracion = propuesta.CategoriaColaboracion,
-                ProyectoId = proyecto.Id,
-                EtapaId = propuesta.EtapaId,
-                OrganizacionComprometidaId = propuesta.OrganizacionProponenteId,
-                FechaRealizacion = null 
-            };
-
-            await _colaboracionRepository.AddAsync(colaboracion);
 
             var colaboracionPayload = new CrearColaboracionDTO
             {
@@ -202,12 +189,7 @@ public class PropuestaColaboracionController : ControllerBase
             BonitaActivityResponse activity;
             try
             {
-                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Evaluar propuestas de colaboración");
-                var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userName))
-                {
-                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
-                }
+                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Evaluar propuestas de colaboración");                
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
@@ -233,8 +215,8 @@ public class PropuestaColaboracionController : ControllerBase
             {
                 return StatusCode(502, "Falló la terminación de la actividad 'Evaluar propuestas' en Bonita.");
             }
-
-            return Ok(colaboracionPayload);
+            var colaboracionOut = await _bonitaService.GetVariableByCaseIdAndName(caseId, "colaboracionOut");
+            return Ok(colaboracionOut);
         }
         catch (Exception ex)
         {
