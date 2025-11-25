@@ -50,9 +50,23 @@ namespace backend.Controllers
                 var tempBonitaService = new BonitaService(requestHelper);
 
                 var userId = await tempBonitaService.GetUserIdByUserName(loginDTO.Username);
+                var membresias = await tempBonitaService.GetMembershipsByUserIdAsync(userId);
+                string nombreRol = "Sin Rol";
+
+                var primeraMembresia = membresias.FirstOrDefault();
+
+                if (primeraMembresia != null && !string.IsNullOrEmpty(primeraMembresia.role_id))
+                {
+                    var rolBonita = await tempBonitaService.GetRoleByIdAsync(primeraMembresia.role_id);
+                    
+                    if (rolBonita != null)
+                    {
+                        nombreRol = rolBonita.displayName;
+                    }
+                }
 
 
-                var appToken = GenerateAppJwt(userId, bonitaSession);
+                var appToken = GenerateAppJwt(userId, nombreRol, bonitaSession);
 
                 return Ok(new { token = appToken });
             }
@@ -62,7 +76,7 @@ namespace backend.Controllers
             }
         }
 
-        private string GenerateAppJwt(string userId, BonitaSession bonitaSession)
+        private string GenerateAppJwt(string userId, string nombreRol, BonitaSession bonitaSession)
         {
             var jwtKey = _configuration["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey))
@@ -80,6 +94,7 @@ namespace backend.Controllers
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("bonita_token", bonitaSession.BonitaToken),
                 new Claim("bonita_jsession_id", bonitaSession.JSessionId),
+                new Claim("rol", nombreRol)
             };
 
             var token = new JwtSecurityToken(
