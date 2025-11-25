@@ -285,6 +285,19 @@ public class BonitaService
             throw new Exception($"No se encontró el usuario con nombre '{userName}': {ex.Message}");
         }
     }
+
+    public async Task<BonitaUserResponse> GetUserNameByUserId(string userId)
+    {
+        try
+        {
+            var response = await _request.DoRequestAsync<BonitaUserResponse>(HttpMethod.Get, $"API/identity/user/{userId}");
+            return response;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"No se encontró el usuario con ID '{userId}': {ex.Message}");
+        }
+    }
     
     // <summary>
     // Asigna una actividad a un usuario específico.

@@ -18,20 +18,20 @@ public class PropuestaColaboracionController : ControllerBase
     private readonly PropuestaColaboracionRepository _propuestaRepository;
     private readonly EtapaRepository _etapaRepository;
     private readonly ProyectoRepository _proyectoRepository;
-    private readonly ColaboracionRepository _colaboracionRepository;
+    // private readonly ColaboracionRepository _colaboracionRepository;
 
     public PropuestaColaboracionController(
         BonitaService bonitaService,
         PropuestaColaboracionRepository propuestaRepository,
         EtapaRepository etapaRepository,
-        ProyectoRepository proyectoRepository,
-        ColaboracionRepository colaboracionRepository)
+        ProyectoRepository proyectoRepository)
+        //ColaboracionRepository colaboracionRepository)
     {
         _bonitaService = bonitaService;
         _propuestaRepository = propuestaRepository;
         _etapaRepository = etapaRepository;
         _proyectoRepository = proyectoRepository;
-        _colaboracionRepository = colaboracionRepository;
+        //_colaboracionRepository = colaboracionRepository;
     }
 
     [HttpPost]
@@ -55,9 +55,9 @@ public class PropuestaColaboracionController : ControllerBase
             {
                 return NotFound($"No se encontró el proyecto asociado a la etapa.");
             }
-
-            bool yaCubierta = await _colaboracionRepository.Exist(c => c.EtapaId == propuestaDTO.EtapaId);
-            if (yaCubierta)
+            
+            bool yaExiste = await _propuestaRepository.Exist(p => p.EtapaId == propuestaDTO.EtapaId && p.Estado == EstadoPropuestaColaboracion.Aceptada);
+            if (yaExiste)
             {
                 return Conflict("La etapa ya tiene una colaboración aceptada, no se pueden proponer más compromisos.");
             }
@@ -68,14 +68,11 @@ public class PropuestaColaboracionController : ControllerBase
             try
             {
                 activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Proponer compromiso con una etapa");
-
-                var userName = User.FindFirst(ClaimTypes.NameIdentifier).Value;
-                if (string.IsNullOrEmpty(userName))
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
                 }
-
-                var userId = await _bonitaService.GetUserIdByUserName(userName);
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
             }
             catch (Exception ex)
@@ -128,7 +125,7 @@ public class PropuestaColaboracionController : ControllerBase
 
             var propuestas = await _propuestaRepository.FilterAsync(
                 filtro: p => p.Etapa.ProyectoId == proyectoId,
-                includes: "Etapa,OrganizacionProponente" 
+                includes: "Etapa" 
             );
 
             return Ok(propuestas);
@@ -168,7 +165,7 @@ public class PropuestaColaboracionController : ControllerBase
                 return NotFound($"No se encontró el proyecto asociado a la propuesta.");
             }
 
-            bool yaExiste = await _colaboracionRepository.Exist(c => c.EtapaId == propuesta.EtapaId);
+            bool yaExiste = await _propuestaRepository.Exist(p => p.EtapaId == propuesta.EtapaId && p.Estado == EstadoPropuestaColaboracion.Aceptada);
             if (yaExiste)
             {
                 return Conflict("Ya existe una colaboración aceptada para la etapa asociada a esta propuesta.");
@@ -176,19 +173,6 @@ public class PropuestaColaboracionController : ControllerBase
             
             long caseId = proyecto.BonitaCaseId;
 
-            Colaboracion colaboracion = new Colaboracion
-            {
-                Id = Guid.NewGuid(),
-                ProyectoNombre = proyecto.Nombre,
-                Descripcion = propuesta.Descripcion,
-                CategoriaColaboracion = propuesta.CategoriaColaboracion,
-                ProyectoId = proyecto.Id,
-                EtapaId = propuesta.EtapaId,
-                OrganizacionComprometidaId = propuesta.OrganizacionProponenteId,
-                FechaRealizacion = null 
-            };
-
-            await _colaboracionRepository.AddAsync(colaboracion);
 
             var colaboracionPayload = new CrearColaboracionDTO
             {
@@ -205,17 +189,17 @@ public class PropuestaColaboracionController : ControllerBase
             BonitaActivityResponse activity;
             try
             {
-                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Evaluar propuestas de colaboración");
-                var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userName))
+                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Evaluar propuestas de colaboración");                
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
                 }
-                var userId = await _bonitaService.GetUserIdByUserName(userName);
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
 
                 var colaboracionJson = JsonSerializer.Serialize(colaboracionPayload);
                 await _bonitaService.SetVariableByCase(caseId.ToString(), "colaboracionIn", colaboracionJson, "java.lang.String");
+                await _bonitaService.SetVariableByCase(caseId.ToString(), "colaboracionOut", "null", "java.lang.String");
 
                 
             }
@@ -232,12 +216,66 @@ public class PropuestaColaboracionController : ControllerBase
             {
                 return StatusCode(502, "Falló la terminación de la actividad 'Evaluar propuestas' en Bonita.");
             }
+            try 
+            {
+                var colaboracionOutJson = await WaitForBonitaVariableUpdate(caseId, "colaboracionOut");
+                
+                if (colaboracionOutJson == null)
+                    return StatusCode(504, "Tiempo de espera agotado: El servicio Cloud tardó demasiado en responder.");
 
-            return Ok(colaboracionPayload);
+                return Ok(colaboracionOutJson);
+            }
+            catch(Exception ex)
+            {
+                 return StatusCode(500, $"Error esperando respuesta del Cloud: {ex.Message}");
+            }
         }
         catch (Exception ex)
         {
             return StatusCode(500, ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Realiza Polling a Bonita hasta que la variable especificada tenga un valor distinto de null/vacío.
+    /// </summary>
+    private async Task<ColaboracionDTO?> WaitForBonitaVariableUpdate(long caseId, string variableName)
+    {
+        int intentos = 0;
+        int maxIntentos = 10; // 20 intentos * 500ms = 10 segundos de espera máxima
+        int delayMs = 500;
+
+        while (intentos < maxIntentos)
+        {
+            try 
+            {
+                // Obtenemos el valor crudo (string)
+                string jsonResult = await _bonitaService.GetVariableByCaseIdAndName(caseId, variableName);
+                Console.WriteLine($"Colaboracion recibida del Cloud: {jsonResult}");
+
+                // Verificamos si tiene un valor válido (Bonita puede devolver "null" como string o string vacío)
+                if (!string.IsNullOrEmpty(jsonResult) && jsonResult != "null" && jsonResult != "{}")
+                {
+                    // Intentamos deserializar
+                    var result = JsonSerializer.Deserialize<ColaboracionDTO>(jsonResult, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    Console.WriteLine($"Deserialización {result}");
+                    // Si deserializó correctamente, retornamos
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al obtener o deserializar la variable de Bonita: " + ex.Message);
+            }
+
+            // Esperamos antes del siguiente intento
+            await Task.Delay(delayMs);
+            intentos++;
+        }
+
+        return null; // Timeout
     }
 }
