@@ -223,6 +223,10 @@ public class PropuestaColaboracionController : ControllerBase
                 if (colaboracionOutJson == null)
                     return StatusCode(504, "Tiempo de espera agotado: El servicio Cloud tardó demasiado en responder.");
 
+                Etapa etapa = propuesta.Etapa;
+                etapa.ColaboracionId = colaboracionOutJson.Id;
+                await _etapaRepository.UpdateAsync(etapa, etapa);
+
                 return Ok(colaboracionOutJson);
             }
             catch(Exception ex)
