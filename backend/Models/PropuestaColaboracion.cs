@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using backend.DTOs;
 
 namespace backend.Models;
 
@@ -12,7 +13,7 @@ public class PropuestaColaboracion
     public required Guid EtapaId { get; set; }
 
     [Required]
-    public required Guid OrganizacionProponenteId { get; set; }
+    public required long OrganizacionProponenteId { get; set; }
 
     [Required]
     public required string Descripcion { get; set; }
@@ -28,8 +29,8 @@ public class PropuestaColaboracion
     [ForeignKey("EtapaId")]
     public Etapa? Etapa { get; set; }
     
-    [ForeignKey("OrganizacionProponenteId")]
-    public Organizacion? OrganizacionProponente { get; set; }
+    // [ForeignKey("OrganizacionProponenteId")]
+    // public Organizacion? OrganizacionProponente { get; set; }
 }
 
 public enum EstadoPropuestaColaboracion 

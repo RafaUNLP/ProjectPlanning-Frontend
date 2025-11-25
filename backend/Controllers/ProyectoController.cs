@@ -44,13 +44,12 @@ public class ProyectoController : ControllerBase
                 var success = await _bonitaService.SetVariableByCase(caseId.ToString(), "proyecto", proyectoJson, "java.lang.String");
                 activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Cargar el proyecto");
 
-                var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userName))
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
                 }
 
-                var userId = await _bonitaService.GetUserIdByUserName(userName);
                 await _bonitaService.AssignActivityToUser(activity.id, userId);
             }
             catch (Exception ex)
