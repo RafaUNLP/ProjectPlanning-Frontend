@@ -14,10 +14,12 @@ namespace backend.Controllers;
 public class ProyectoController : ControllerBase
 {
     private readonly ProyectoRepository _proyectoRepository;
+    private readonly EtapaRepository _etapaRepository;
     private readonly BonitaService _bonitaService;
-    public ProyectoController(ProyectoRepository proyectoRepository, BonitaService bonitaService)
+    public ProyectoController(ProyectoRepository proyectoRepository, EtapaRepository etapaRepository, BonitaService bonitaService)
     {
         _proyectoRepository = proyectoRepository;
+        _etapaRepository = etapaRepository;
         _bonitaService = bonitaService;
     }
 
@@ -101,6 +103,74 @@ public class ProyectoController : ControllerBase
                 return NotFound();
 
             return Ok(buscado);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Avanza la actividad "Completar etapa" en Bonita para una etapa específica.
+    /// </summary>
+    /// <param name="etapaId">ID de la etapa a completar</param>
+    [HttpPost("completar-etapa/{etapaId}")]
+    public async Task<IActionResult> CompletarEtapa(Guid etapaId)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+            }
+
+            var etapa = await _etapaRepository.GetAsync(etapaId);
+            if (etapa == null)
+            {
+                return NotFound($"No se encontró la etapa con ID: {etapaId}");
+            }
+
+            if (etapa.ColaboracionId == null)
+            {
+                return BadRequest("La etapa indicada no tiene una colaboración asociada (ColaboracionId es null), por lo que no se puede enviar a Bonita.");
+            }
+
+            var proyecto = await _proyectoRepository.GetAsync(etapa.ProyectoId);
+            if (proyecto == null)
+            {
+                return NotFound("No se encontró el proyecto asociado a esta etapa.");
+            }
+            
+            long caseId = proyecto.BonitaCaseId;
+
+            try
+            {
+                var activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Completar etapa");
+
+                await _bonitaService.AssignActivityToUser(activity.id, userId);
+
+                
+                await _bonitaService.SetVariableByCase(
+                    caseId.ToString(), 
+                    "colaboracionCompletarId", 
+                    etapa.ColaboracionId.ToString(), 
+                    "java.lang.String"
+                );
+
+                bool finished = await _bonitaService.CompleteActivityAsync(activity.id);
+
+                if (!finished)
+                {
+                    return StatusCode(502, "Falló la terminación de la tarea en Bonita.");
+                }
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(502, $"Error en la comunicación con Bonita: {ex.Message}");
+            }
         }
         catch (Exception ex)
         {
