@@ -1,88 +1,71 @@
-// using Microsoft.AspNetCore.Mvc;
-// using backend.Models;
-// using backend.DTOs;
-// using backend.Repositories;
-// using backend.Services;
-// using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using backend.DTOs;
+using backend.Services;
+using Microsoft.AspNetCore.Authorization;
 
-// namespace backend.Controllers;
+namespace backend.Controllers;
 
-// [ApiController]
-// [Route("[controller]")]
-// [Authorize]
-// public class OrganizacionController : ControllerBase
-// {
-//     private readonly OrganizacionRepository _organizacionRepository;
-//     private readonly BonitaService _bonitaService;
-//     public OrganizacionController(OrganizacionRepository organizacionRepository, BonitaService bonitaService)
-//     {
-//         _organizacionRepository = organizacionRepository;
-//         _bonitaService = bonitaService;
-//     }
+[ApiController]
+[Route("[controller]")]
+[Authorize]
+public class OrganizacionController : ControllerBase
+{
+    private readonly BonitaService _bonitaService;
 
-//     [HttpPost]
-//     public async Task<IActionResult> CrearOrganizacion(CrearOrganizacionDTO organizacionDTO)
-//     {
-//         try
-//         {
-//             bool nombreOrganizacionEnUso = await _organizacionRepository.Exist(o => o.Nombre.ToLower() == organizacionDTO.Nombre.ToLower());
+    public OrganizacionController(BonitaService bonitaService)
+    {
+        _bonitaService = bonitaService;
+    }
 
-//             if (nombreOrganizacionEnUso)
-//                 return Conflict("El nombre de la organización ya está en uso, por favor use uno distinto.");
+    /// <summary>
+    /// Recupera un usuario de Bonita con su Rol principal.
+    /// </summary>
+    /// <param name="id">ID del usuario en Bonita</param>
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUsuarioBonita(string id)
+    {
+        try
+        {
+            var bonitaUser = await _bonitaService.GetUserNameByUserId(id);
 
-//             Organizacion organizacion = await _organizacionRepository.AddAsync(new Organizacion()
-//             {
-//                 Id = Guid.NewGuid(),
-//                 Nombre = organizacionDTO.Nombre,
-//                 Contraseña = organizacionDTO.Contraseña
-//             });
+            if (bonitaUser == null)
+            {
+                return NotFound($"No se encontró el usuario con id {id} en Bonita.");
+            }
 
-//             // //¿todo esto va?
-//             // var idProc = await _bonitaService.GetProcessIdByName("Prueba1");//recupera id del proceso
-//             // var caseId = await _bonitaService.StartProcessById(idProc);//inicia una instancia del mismo
-//             // var suc = await _bonitaService.SetVariableByCase(caseId.ToString(), "var1", "valor1", "java.lang.String");//le instancia variables de prueba
-//             // var activity = await _bonitaService.GetActivityByCaseId(caseId.ToString());//recupera el id de la actividad
-//             // Console.WriteLine($"Actividad: {activity}");
-//             // var userId = await _bonitaService.GetUserIdByUserName("walter.bates");//hay que asignar un usuario a la actividad para completarla, recupera el id usuario en bonita
-//             // await _bonitaService.AssignActivityToUser(activity.id, userId);//le asigna la actividad al usuario
-//             // bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);//completa la actividad
-//             bool finishedActivity = true;
-//             if (finishedActivity)
-//                 return Ok(new OrganizacionDTO()
-//                 {
-//                     Id = organizacion.Id,
-//                     Nombre = organizacion.Nombre
-//                 });
-//             else
-//                 return StatusCode(502,"Falló la terminación de la actividad en Bonita");
-//         }
-//         catch (Exception ex)
-//         {
-//             return StatusCode(500, ex.Message);
-//         }
-//     }
+            var membresias = await _bonitaService.GetMembershipsByUserIdAsync(id);
+            
+            string nombreRol = "Sin Rol";
 
-//     [HttpGet("{id}")]
-//     public async Task<IActionResult> RecuperarOrganizacion(Guid id)
-//     {
-//         try
-//         {
-//             Organizacion? buscada = await _organizacionRepository.GetAsyncWithIncludes(id, includes: "Proyectos,Proyectos.Etapas,Proyectos.Etapas.Colaboracion,ColaboracionesComprometida");
+            var primeraMembresia = membresias.FirstOrDefault();
 
-//             if (buscada == null)
-//                 return NotFound();
+            if (primeraMembresia != null && !string.IsNullOrEmpty(primeraMembresia.role_id))
+            {
+                var rolBonita = await _bonitaService.GetRoleByIdAsync(primeraMembresia.role_id);
+                
+                if (rolBonita != null)
+                {
+                    nombreRol = rolBonita.displayName;
+                }
+            }
 
-//             return Ok(new OrganizacionDTO()
-//             {
-//                 Id = buscada.Id,
-//                 Nombre = buscada.Nombre,
-//                 Proyectos = buscada.Proyectos,
-//                 ColaboracionesComprometida = buscada.ColaboracionesComprometida ?? [],
-//             });
-//         }
-//         catch (Exception ex)
-//         {
-//             return StatusCode(500, ex.Message);
-//         }
-//     }
-// }
+            long.TryParse(bonitaUser.id, out long idNumerico);
+
+            var usuarioDto = new OrganizacionDTO
+            {
+                Id = idNumerico,
+                UserName = bonitaUser.userName,
+                Nombre = bonitaUser.firstName,
+                Apellido = bonitaUser.lastName,
+                Enabled = bonitaUser.enabled == "true",
+                Rol = nombreRol
+            };
+
+            return Ok(usuarioDto);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(502, $"Error obteniendo usuario de Bonita: {ex.Message}");
+        }
+    }
+}

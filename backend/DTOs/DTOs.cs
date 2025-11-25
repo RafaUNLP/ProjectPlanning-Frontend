@@ -106,25 +106,12 @@ public class CrearOrganizacionDTO
 }
 public class OrganizacionDTO //para ocultar la contraseña
 {
-    /// <summary>
-    /// Id único de la organización.
-    /// </summary>
-    public Guid? Id { get; set; }
-
-    /// <summary>
-    /// Nombre único de la organización.
-    /// </summary>
-    [Required] public required string Nombre { get; set; }
-
-    /// <summary>
-    /// Listado de sus proyectos
-    /// </summary>
-    public List<Proyecto> Proyectos { get; set; } = [];
-
-    /// <summary>
-    /// Listado de las colaboraciones con las que se comprometió
-    /// </summary>
-    public List<ColaboracionDTO> ColaboracionesComprometida { get; set; } = [];
+   public long Id { get; set; }
+    public string UserName { get; set; }
+    public string Nombre { get; set; }
+    public string Apellido { get; set; }
+    public string Rol { get; set; } 
+    public bool Enabled { get; set; }
 }
 
 public class BonitaProcessResponse
@@ -263,3 +250,17 @@ public enum CategoriaColaboracion{
     Economica = 1, Material = 2, ManoDeObra = 3, Otra = 4
 }
 
+public class BonitaMembershipResponse
+{
+    public string user_id { get; set; }
+    public string role_id { get; set; }
+    public string group_id { get; set; }
+    public string assigned_date { get; set; }
+}
+
+public class BonitaRoleResponse
+{
+    public string id { get; set; }
+    public string name { get; set; }
+    public string displayName { get; set; }
+}
