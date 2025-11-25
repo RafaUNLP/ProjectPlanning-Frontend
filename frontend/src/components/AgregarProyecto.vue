@@ -150,7 +150,7 @@ export default defineComponent({
         const username = payload?.sub || payload?.username || null
         if (!username) return
 
-        const resp = await api.get(`/organizacion/byname/${encodeURIComponent(username)}`)
+        const resp = await api.get(`/Organizacion/${encodeURIComponent(username)}`)
         if (resp && resp.data) {
           this.organizacionId = resp.data.id
           this.proyectos = resp.data.proyectos || []

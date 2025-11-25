@@ -62,12 +62,12 @@ public class OrganizacionController : ControllerBase
         }
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> RecuperarOrganizacion(Guid id)
+    [HttpGet("{name}")]
+    public async Task<IActionResult> RecuperarOrganizacionPorNombre(string name)
     {
         try
         {
-            Organizacion? buscada = await _organizacionRepository.GetAsyncWithIncludes(id, includes: "Proyectos,Proyectos.Etapas,Proyectos.Etapas.Colaboracion,ColaboracionesComprometida");
+            Organizacion? buscada = (await _organizacionRepository.FilterAsync(o => o.Nombre.ToLower().Trim() == name.ToLower().Trim(), includes: "Proyectos,Proyectos.Etapas,Proyectos.Etapas.Colaboracion,ColaboracionesComprometida")).FirstOrDefault();
 
             if (buscada == null)
                 return NotFound();
