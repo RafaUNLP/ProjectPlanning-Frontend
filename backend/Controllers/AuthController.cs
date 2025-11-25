@@ -13,10 +13,12 @@ namespace backend.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AuthController(IConfiguration configuration)
+        public AuthController(IConfiguration configuration, IHttpClientFactory httpClientFactory)
         {
             _configuration = configuration;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpPost("login")]
@@ -29,7 +31,12 @@ namespace backend.Controllers
 
             try
             {
-                var bonitaAccess = new Access();
+                string bonitaUrl = _configuration["Bonita:BaseUrl"];
+                if (string.IsNullOrEmpty(bonitaUrl))
+                {
+                    return StatusCode(500, "La URL de Bonita no está configurada en el servidor.");
+                }
+                var bonitaAccess = new Access(bonitaUrl);
                 var bonitaSession = await bonitaAccess.LoginAsync(loginDTO.Username, loginDTO.Password);
 
                 if (bonitaSession == null)
@@ -37,7 +44,29 @@ namespace backend.Controllers
                     return Unauthorized(new { message = "Usuario o contraseña de Bonita incorrectos." });
                 }
 
-                var appToken = GenerateAppJwt(loginDTO.Username, bonitaSession);
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.BaseAddress = new Uri(bonitaUrl);
+                var requestHelper = new RequestHelper(httpClient, bonitaSession.BonitaToken, bonitaSession.JSessionId);
+                var tempBonitaService = new BonitaService(requestHelper);
+
+                var userId = await tempBonitaService.GetUserIdByUserName(loginDTO.Username);
+                var membresias = await tempBonitaService.GetMembershipsByUserIdAsync(userId);
+                string nombreRol = "Sin Rol";
+
+                var primeraMembresia = membresias.FirstOrDefault();
+
+                if (primeraMembresia != null && !string.IsNullOrEmpty(primeraMembresia.role_id))
+                {
+                    var rolBonita = await tempBonitaService.GetRoleByIdAsync(primeraMembresia.role_id);
+                    
+                    if (rolBonita != null)
+                    {
+                        nombreRol = rolBonita.displayName;
+                    }
+                }
+
+
+                var appToken = GenerateAppJwt(userId, nombreRol, bonitaSession);
 
                 return Ok(new { token = appToken });
             }
@@ -47,7 +76,7 @@ namespace backend.Controllers
             }
         }
 
-        private string GenerateAppJwt(string username, BonitaSession bonitaSession)
+        private string GenerateAppJwt(string userId, string nombreRol, BonitaSession bonitaSession)
         {
             var jwtKey = _configuration["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey))
@@ -61,10 +90,11 @@ namespace backend.Controllers
             // Estos son los "datos" que guardamos dentro del JWT.
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, username), 
+                new Claim(JwtRegisteredClaimNames.Sub, userId), 
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("bonita_token", bonitaSession.BonitaToken),
                 new Claim("bonita_jsession_id", bonitaSession.JSessionId),
+                new Claim("rol", nombreRol)
             };
 
             var token = new JwtSecurityToken(
