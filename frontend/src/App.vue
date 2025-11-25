@@ -5,6 +5,7 @@ import Navbar from './components/Navbar.vue'
 import Header from './components/Header.vue'
 import Login from './components/Login.vue'
 import Auditoria from './components/Auditoria.vue'
+import VerEtapasParaColaborar from './components/VerEtapasParaColaborar.vue'
 
 const drawer = ref(false)
 const isAuthenticated = ref(false)

@@ -14,10 +14,12 @@ namespace backend.Controllers;
 public class ProyectoController : ControllerBase
 {
     private readonly ProyectoRepository _proyectoRepository;
+    private readonly PropuestaColaboracionRepository _propuestaRepository;
     private readonly BonitaService _bonitaService;
-    public ProyectoController(ProyectoRepository proyectoRepository, BonitaService bonitaService)
+    public ProyectoController(ProyectoRepository proyectoRepository, PropuestaColaboracionRepository propuestaRepository, BonitaService bonitaService)
     {
         _proyectoRepository = proyectoRepository;
+        _propuestaRepository = propuestaRepository;
         _bonitaService = bonitaService;
     }
 
@@ -101,6 +103,40 @@ public class ProyectoController : ControllerBase
                 return NotFound();
 
             return Ok(buscado);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [HttpGet("/requierenColaboraciones")]
+    public async Task<IActionResult> RecuperarProyectoQueRequierenColaboraciones()
+    {
+        try
+        {
+            var proyectos = await _proyectoRepository.FilterAsync(p => p.Etapas.Any(e => e.RequiereColaboracion && e.ColaboracionId == null), includes:"Etapas");
+            
+            foreach (Proyecto proyecto in proyectos)
+            {
+                var etapasFiltradas = proyecto.Etapas.Where(e => e.RequiereColaboracion && e.ColaboracionId == null).ToList();
+
+                // Filtrar asincrónicamente las etapas que no tienen propuestas
+                var etapasConPropuestas = new List<Etapa>();
+                foreach (var etapa in etapasFiltradas)
+                {
+                    var existePropuesta = await _propuestaRepository.Exist(prop => prop.EtapaId == etapa.Id);
+                    if (!existePropuesta)
+                    {
+                        etapasConPropuestas.Add(etapa);
+                    }
+                }
+
+                // Asigna las etapas filtradas
+                proyecto.Etapas = etapasConPropuestas;
+            }
+
+            return Ok(proyectos);
         }
         catch (Exception ex)
         {
