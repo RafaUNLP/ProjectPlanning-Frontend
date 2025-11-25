@@ -199,6 +199,7 @@ public class PropuestaColaboracionController : ControllerBase
 
                 var colaboracionJson = JsonSerializer.Serialize(colaboracionPayload);
                 await _bonitaService.SetVariableByCase(caseId.ToString(), "colaboracionIn", colaboracionJson, "java.lang.String");
+                await _bonitaService.SetVariableByCase(caseId.ToString(), "colaboracionOut", "null", "java.lang.String");
 
                 
             }
@@ -215,12 +216,66 @@ public class PropuestaColaboracionController : ControllerBase
             {
                 return StatusCode(502, "Falló la terminación de la actividad 'Evaluar propuestas' en Bonita.");
             }
-            var colaboracionOut = await _bonitaService.GetVariableByCaseIdAndName(caseId, "colaboracionOut");
-            return Ok(colaboracionOut);
+            try 
+            {
+                var colaboracionOutJson = await WaitForBonitaVariableUpdate(caseId, "colaboracionOut");
+                
+                if (colaboracionOutJson == null)
+                    return StatusCode(504, "Tiempo de espera agotado: El servicio Cloud tardó demasiado en responder.");
+
+                return Ok(colaboracionOutJson);
+            }
+            catch(Exception ex)
+            {
+                 return StatusCode(500, $"Error esperando respuesta del Cloud: {ex.Message}");
+            }
         }
         catch (Exception ex)
         {
             return StatusCode(500, ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Realiza Polling a Bonita hasta que la variable especificada tenga un valor distinto de null/vacío.
+    /// </summary>
+    private async Task<ColaboracionDTO?> WaitForBonitaVariableUpdate(long caseId, string variableName)
+    {
+        int intentos = 0;
+        int maxIntentos = 10; // 20 intentos * 500ms = 10 segundos de espera máxima
+        int delayMs = 500;
+
+        while (intentos < maxIntentos)
+        {
+            try 
+            {
+                // Obtenemos el valor crudo (string)
+                string jsonResult = await _bonitaService.GetVariableByCaseIdAndName(caseId, variableName);
+                Console.WriteLine($"Colaboracion recibida del Cloud: {jsonResult}");
+
+                // Verificamos si tiene un valor válido (Bonita puede devolver "null" como string o string vacío)
+                if (!string.IsNullOrEmpty(jsonResult) && jsonResult != "null" && jsonResult != "{}")
+                {
+                    // Intentamos deserializar
+                    var result = JsonSerializer.Deserialize<ColaboracionDTO>(jsonResult, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    Console.WriteLine($"Deserialización {result}");
+                    // Si deserializó correctamente, retornamos
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al obtener o deserializar la variable de Bonita: " + ex.Message);
+            }
+
+            // Esperamos antes del siguiente intento
+            await Task.Delay(delayMs);
+            intentos++;
+        }
+
+        return null; // Timeout
     }
 }

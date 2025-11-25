@@ -252,6 +252,7 @@ public class ColaboracionDTO
     public required CategoriaColaboracion CategoriaColaboracion { get; set; }
     public required Guid ProyectoId { get; set; }
     public required Guid EtapaId { get; set; }
+    [JsonPropertyName("organizacionId")]
     public required long OrganizacionProyectoId { get; set; } // Dueño del proyecto
     public required long OrganizacionComprometidaId { get; set; } // Quien ayuda
     public DateTime? FechaRealizacion { get; set; } // Nullable para inicializar vacío
