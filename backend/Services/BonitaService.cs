@@ -325,4 +325,42 @@ public class BonitaService
             throw new Exception($"Error al asignar la actividad '{taskId}' al usuario '{userId}': {ex.Message}");
         }
     }
+
+/// <summary>
+    /// Obtiene las membresías de un usuario específico.
+    /// </summary>
+    public async Task<List<BonitaMembershipResponse>> GetMembershipsByUserIdAsync(string userId)
+    {
+        try
+        {
+            return await _request.DoRequestAsync<List<BonitaMembershipResponse>>(
+                HttpMethod.Get, 
+                $"API/identity/membership?p=0&c=100&f=user_id={userId}"
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al obtener membresías para usuario {userId}: {ex.Message}");
+            return new List<BonitaMembershipResponse>();
+        }
+    }
+
+    /// <summary>
+    /// Obtiene un rol de Bonita por su ID.
+    /// </summary>
+    public async Task<BonitaRoleResponse?> GetRoleByIdAsync(string roleId)
+    {
+        try
+        {
+            return await _request.DoRequestAsync<BonitaRoleResponse>(
+                HttpMethod.Get, 
+                $"API/identity/role/{roleId}"
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al obtener el rol {roleId}: {ex.Message}");
+            return null;
+        }
+    }
 }
