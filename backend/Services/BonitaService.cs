@@ -363,4 +363,20 @@ public class BonitaService
             return null;
         }
     }
+
+    public async Task<List<BonitaUserResponse>> GetUsersAsync(int page, int count)
+    {
+        try
+        {
+            return await _request.DoRequestAsync<List<BonitaUserResponse>>(
+                HttpMethod.Get, 
+                $"API/identity/user?p={page}&c={count}"
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al obtener usuarios: {ex.Message}");
+            return new List<BonitaUserResponse>();
+        }
+    }
 }

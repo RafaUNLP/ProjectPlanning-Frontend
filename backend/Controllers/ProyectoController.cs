@@ -23,6 +23,7 @@ public class ProyectoController : ControllerBase
         _proyectoRepository = proyectoRepository;
         _propuestaRepository = propuestaRepository;
         _etapaRepository = etapaRepository;
+        _bonitaService = bonitaService;
     }
 
     [HttpPost]
