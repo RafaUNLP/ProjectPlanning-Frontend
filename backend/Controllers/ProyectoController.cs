@@ -16,12 +16,13 @@ public class ProyectoController : ControllerBase
 {
     private readonly ProyectoRepository _proyectoRepository;
     private readonly PropuestaColaboracionRepository _propuestaRepository;
+    private readonly EtapaRepository _etapaRepository;
     private readonly BonitaService _bonitaService;
-    public ProyectoController(ProyectoRepository proyectoRepository, PropuestaColaboracionRepository propuestaRepository, BonitaService bonitaService)
+    public ProyectoController(ProyectoRepository proyectoRepository, PropuestaColaboracionRepository propuestaRepository, EtapaRepository etapaRepository , BonitaService bonitaService)
     {
         _proyectoRepository = proyectoRepository;
         _propuestaRepository = propuestaRepository;
-        _bonitaService = bonitaService;
+        _etapaRepository = etapaRepository;
     }
 
     [HttpPost]
@@ -76,6 +77,7 @@ public class ProyectoController : ControllerBase
                     FechaInicio = e.FechaInicio.ToLocalTime(),
                     FechaFin = e.FechaFin.ToLocalTime(),
                     RequiereColaboracion = e.RequiereColaboracion,
+                    Completada = !e.RequiereColaboracion
                 }).ToList()
             });
 
@@ -111,6 +113,10 @@ public class ProyectoController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Recupera los proyectos que aún esperan colaboraciones junto con sus etapas que NO tienen propuestas aún.
+    /// NOTA: te da hasta las de tus propios proyectos, así que el front lo filtra por organizacionId
+    /// </summary>
     [HttpGet("requierenColaboraciones")]
     public async Task<IActionResult> RecuperarProyectoQueRequierenColaboraciones()
     {
@@ -145,9 +151,12 @@ public class ProyectoController : ControllerBase
         }
     }
 
-
+    /// <summary>
+    /// Recupera los proyectos de una organizacion con sus etapas y propuestas .
+    /// </summary>
+    /// <param name="userId">ID en Bonita del usuario</param>
     [HttpGet("/porOrganizacion/{userId}")]
-    public async Task<IActionResult> RecuperarProyectosPorUserId(long userId)
+    public async Task<IActionResult> RecuperarProyectosPorOrganizacionId(long userId)
     {
         try
         {
@@ -177,6 +186,147 @@ public class ProyectoController : ControllerBase
         {
             return StatusCode(500, ex.Message);
         }
+    }
 
+    /// <summary>
+    /// Avanza la actividad "Completar etapa" en Bonita para una etapa específica.
+    /// </summary>
+    /// <param name="etapaId">ID de la etapa a completar</param>
+    [HttpPost("completar-etapa/{etapaId}")]
+    public async Task<IActionResult> CompletarEtapa(Guid etapaId)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+            }
+
+            var etapa = await _etapaRepository.GetAsync(etapaId);
+            if (etapa == null)
+            {
+                return NotFound($"No se encontró la etapa con ID: {etapaId}");
+            }
+
+            if (etapa.ColaboracionId == null)
+            {
+                return BadRequest("La etapa indicada no tiene una colaboración asociada (ColaboracionId es null), por lo que no se puede enviar a Bonita.");
+            }
+
+            var proyecto = await _proyectoRepository.GetAsync(etapa.ProyectoId);
+            if (proyecto == null)
+            {
+                return NotFound("No se encontró el proyecto asociado a esta etapa.");
+            }
+            
+            long caseId = proyecto.BonitaCaseId;
+
+            try
+            {
+                var activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Completar etapa");
+
+                await _bonitaService.AssignActivityToUser(activity.id, userId);
+
+                
+                await _bonitaService.SetVariableByCase(
+                    caseId.ToString(), 
+                    "colaboracionCompletarId", 
+                    etapa.ColaboracionId.ToString(), 
+                    "java.lang.String"
+                );
+
+                bool finished = await _bonitaService.CompleteActivityAsync(activity.id);
+
+                if (!finished)
+                {                    
+                    return StatusCode(502, "Falló la terminación de la tarea en Bonita.");
+                }
+                
+                etapa.Completada = true;
+                await _etapaRepository.UpdateAsync(etapa, etapa);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(502, $"Error en la comunicación con Bonita: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+    
+    // <summary>
+    /// Verifica que todas las etapas estén listas y completa el proyecto en Bonita.
+    /// </summary>
+    /// <param name="proyectoId">ID del proyecto a completar.</param>
+    [HttpPost("completar-proyecto/{proyectoId}")]
+    public async Task<IActionResult> CompletarProyecto(Guid proyectoId)
+    {
+        try
+        {
+            var proyecto = await _proyectoRepository.GetAsync(proyectoId);
+            if (proyecto == null)
+            {
+                return NotFound($"No se encontró el proyecto con ID: {proyectoId}");
+            }
+
+            var etapas = await _etapaRepository.FilterAsync(e => e.ProyectoId == proyectoId);
+
+            var etapasIncompletas = etapas.Where(e => !e.Completada).ToList();
+
+            if (etapasIncompletas.Any())
+            {
+                var nombres = string.Join(", ", etapasIncompletas.Select(e => e.Nombre));
+                return BadRequest($"No se puede completar el proyecto. Las siguientes etapas aún no están completadas: {nombres}");
+            }
+
+            // (Opcional) También podrías validar que las etapas que NO requieren colaboración 
+            // también estén marcadas como completadas, si esa fuera tu lógica.
+            // Por ahora, nos ceñimos estrictamente a tu requerimiento.
+
+            // 3. Interactuar con Bonita
+            try
+            {
+                long caseId = proyecto.BonitaCaseId;
+
+                // a. Validar usuario
+                var userIdBonita = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdBonita))
+                {
+                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+                }
+
+                // b. Obtener la actividad "Completar proyecto"
+                // Busca la actividad por nombre en el caso correspondiente
+               
+
+                var activity= await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Completar proyecto");
+
+                // c. Asignar y Completar
+                await _bonitaService.AssignActivityToUser(activity.id, userIdBonita);
+                
+                bool finished = await _bonitaService.CompleteActivityAsync(activity.id);
+
+                if (!finished)
+                {
+                    return StatusCode(502, "Falló la terminación de la tarea 'Completar proyecto' en Bonita.");
+                }
+                proyecto.Completado = true;
+                await _proyectoRepository.UpdateAsync(proyecto, proyecto);                  
+
+                return Ok(new { message = "Proyecto completado exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(502, $"Error en la comunicación con Bonita: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
     }
 }

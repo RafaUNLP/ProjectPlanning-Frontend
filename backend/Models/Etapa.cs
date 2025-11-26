@@ -14,4 +14,5 @@ public class Etapa{
     [Column(TypeName = "timestamp")] public required DateTime FechaFin { get; set; }
     public required bool RequiereColaboracion { get; set; }
     public Guid? ColaboracionId { get; set; }
+    public bool Completada { get; set; } = false;
 }
