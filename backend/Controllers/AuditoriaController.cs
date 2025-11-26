@@ -147,21 +147,6 @@ public class AuditoriaController : ControllerBase
                         });
                 else
                     return StatusCode(502,"Falló la terminación de la actividad que recupera la colaboraciones en Bonita");
-
-                // //recupero las etapas y de ahí los proyectos para ir al front
-                // var etapas = await _etapaRepository.FilterAsync(e => cloudColabs.Select(c => c.EtapaId).Contains(e.Id));
-                // var proyectos = await _proyectoRepository.FilterAsync(p => etapas.Select(e => e.ProyectoId).Contains(p.Id),includes:"Etapas,Etapas.Colaboracion,Etapas.Colaboracion.Observaciones");
-                
-                // bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);
-
-                // if (finishedActivity)
-                //     return Ok( new
-                //         {
-                //             caseId,
-                //             proyectos
-                //         });//retorno los proyectos y el caseId para poder finalizar la auditoria
-                // else
-                //     return StatusCode(502,"Falló la terminación de la actividad que recupera la colaboraciones en Bonita");
             }
             catch (Exception ex)
             {

@@ -28,9 +28,6 @@ public class PropuestaColaboracion
 
     [ForeignKey("EtapaId")]
     public Etapa? Etapa { get; set; }
-    
-    // [ForeignKey("OrganizacionProponenteId")]
-    // public Organizacion? OrganizacionProponente { get; set; }
 }
 
 public enum EstadoPropuestaColaboracion 
