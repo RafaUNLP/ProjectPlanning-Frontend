@@ -11,5 +11,6 @@ public class Proyecto
     [Column(TypeName = "timestamp")] public required DateTime Fecha { get; set; }
     public long BonitaCaseId { get; set; }
     public List<Etapa> Etapas { get; set; } = [];
+    public bool Completado { get; set; } = false;
 
 }

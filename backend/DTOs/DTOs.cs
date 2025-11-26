@@ -48,6 +48,7 @@ public class ProyectoDTO
     /// </summary>
     [Required]
     public List<EtapaDTO> Etapas { get; set; } = new List<EtapaDTO>();
+    public bool Completado { get; set; } = false;
 }
 
 public class EtapaDTO
@@ -91,6 +92,7 @@ public class EtapaDTO
     /// </summary>
     public string? DescripcionColaboracion { get; set; }
     public Guid? ColaboracionId { get; set; }
+    public bool Completada { get; set; } = false;
 }
 
 public class CrearOrganizacionDTO

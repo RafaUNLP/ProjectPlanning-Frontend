@@ -75,6 +75,7 @@ public class ProyectoController : ControllerBase
                     FechaInicio = e.FechaInicio.ToLocalTime(),
                     FechaFin = e.FechaFin.ToLocalTime(),
                     RequiereColaboracion = e.RequiereColaboracion,
+                    Completada = !e.RequiereColaboracion
                 }).ToList()
             });
 
@@ -161,11 +162,85 @@ public class ProyectoController : ControllerBase
                 bool finished = await _bonitaService.CompleteActivityAsync(activity.id);
 
                 if (!finished)
-                {
+                {                    
                     return StatusCode(502, "Falló la terminación de la tarea en Bonita.");
                 }
-
+                
+                etapa.Completada = true;
+                await _etapaRepository.UpdateAsync(etapa, etapa);
                 return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(502, $"Error en la comunicación con Bonita: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    // <summary>
+    /// Verifica que todas las etapas estén listas y completa el proyecto en Bonita.
+    /// </summary>
+    /// <param name="proyectoId">ID del proyecto a completar.</param>
+    [HttpPost("completar-proyecto/{proyectoId}")]
+    public async Task<IActionResult> CompletarProyecto(Guid proyectoId)
+    {
+        try
+        {
+            var proyecto = await _proyectoRepository.GetAsync(proyectoId);
+            if (proyecto == null)
+            {
+                return NotFound($"No se encontró el proyecto con ID: {proyectoId}");
+            }
+
+            var etapas = await _etapaRepository.FilterAsync(e => e.ProyectoId == proyectoId);
+
+            var etapasIncompletas = etapas.Where(e => !e.Completada).ToList();
+
+            if (etapasIncompletas.Any())
+            {
+                var nombres = string.Join(", ", etapasIncompletas.Select(e => e.Nombre));
+                return BadRequest($"No se puede completar el proyecto. Las siguientes etapas aún no están completadas: {nombres}");
+            }
+
+            // (Opcional) También podrías validar que las etapas que NO requieren colaboración 
+            // también estén marcadas como completadas, si esa fuera tu lógica.
+            // Por ahora, nos ceñimos estrictamente a tu requerimiento.
+
+            // 3. Interactuar con Bonita
+            try
+            {
+                long caseId = proyecto.BonitaCaseId;
+
+                // a. Validar usuario
+                var userIdBonita = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdBonita))
+                {
+                    return Unauthorized("No se pudo identificar al usuario a partir del token JWT.");
+                }
+
+                // b. Obtener la actividad "Completar proyecto"
+                // Busca la actividad por nombre en el caso correspondiente
+               
+
+                var activity= await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Completar proyecto");
+
+                // c. Asignar y Completar
+                await _bonitaService.AssignActivityToUser(activity.id, userIdBonita);
+                
+                bool finished = await _bonitaService.CompleteActivityAsync(activity.id);
+
+                if (!finished)
+                {
+                    return StatusCode(502, "Falló la terminación de la tarea 'Completar proyecto' en Bonita.");
+                }
+                proyecto.Completado = true;
+                await _proyectoRepository.UpdateAsync(proyecto, proyecto);                  
+
+                return Ok(new { message = "Proyecto completado exitosamente." });
             }
             catch (Exception ex)
             {
