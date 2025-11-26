@@ -264,3 +264,16 @@ public class BonitaRoleResponse
     public string name { get; set; }
     public string displayName { get; set; }
 }
+
+public class EtapaConPropuestasDTO: EtapaDTO
+{
+    public IEnumerable<PropuestaColaboracion> Propuestas { get; set; }
+}
+public class ListarProyectosDTO
+{
+    public Guid? Id { get; set; }
+    public required string Nombre { get; set; }
+    public required string Descripcion { get; set; }
+    public required long OrganizacionId { get; set; }
+    public IEnumerable<EtapaConPropuestasDTO> Etapas { get; set; } = [];
+}

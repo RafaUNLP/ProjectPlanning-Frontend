@@ -5,6 +5,7 @@ using backend.Repositories;
 using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Collections.Immutable;
 
 namespace backend.Controllers;
 
@@ -142,5 +143,40 @@ public class ProyectoController : ControllerBase
         {
             return StatusCode(500, ex.Message);
         }
+    }
+
+
+    [HttpGet("/porOrganizacion/{userId}")]
+    public async Task<IActionResult> RecuperarProyectosPorUserId(long userId)
+    {
+        try
+        {
+            IEnumerable<Proyecto> proyectos = await _proyectoRepository.FilterAsync(p => p.OrganizacionId == userId, orderBy: order => order.OrderByDescending(p => p.Fecha),includes: "Etapas");
+
+            var listado = await Task.WhenAll(proyectos.Select(async p => new ListarProyectosDTO()
+        {
+            Id = p.Id,
+            Descripcion = p.Descripcion,
+            Nombre = p.Nombre,
+            OrganizacionId = p.OrganizacionId,
+            Etapas = await Task.WhenAll(p.Etapas.Select(async e => new EtapaConPropuestasDTO()
+            {
+                Id = e.Id,
+                Nombre = e.Nombre,
+                RequiereColaboracion = e.RequiereColaboracion,
+                Descripcion = e.Descripcion,
+                FechaInicio = e.FechaInicio,
+                FechaFin = e.FechaFin,
+                Propuestas = await _propuestaRepository.FilterAsync(prop => prop.EtapaId == e.Id)
+            }))
+        }));
+
+            return Ok(listado);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+
     }
 }

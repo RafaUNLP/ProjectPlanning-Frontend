@@ -147,10 +147,10 @@ export default defineComponent({
       try {
         const token = localStorage.getItem('token')
         const payload = this.parseJwt(token)
-        const username = payload?.sub || payload?.username || null
-        if (!username) return
+        const userid = payload?.sub || payload?.userid || null
+        if (!userid) return
 
-        const resp = await api.get(`/Organizacion/${encodeURIComponent(username)}`)
+        const resp = await api.get(`/porOrganizacion/${encodeURIComponent(userid)}`)
         if (resp && resp.data) {
           this.organizacionId = resp.data.id
           this.proyectos = resp.data.proyectos || []
