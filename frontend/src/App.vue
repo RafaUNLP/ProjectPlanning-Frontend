@@ -56,7 +56,7 @@ import { useDisplay } from 'vuetify'
 import Login from './components/Login.vue'
 import Auditoria from './components/Auditoria.vue'
 import AgregarProyecto from './components/AgregarProyecto.vue'
-// import ListaProyectos from './components/ListaProyectos.vue' // (Si lo tuvieras separado)
+import ListaProyectos from './components/ListaProyectos.vue'
 import VerEtapasParaColaborar from './components/VerEtapasParaColaborar.vue'
 
 // --- Tipos ---
@@ -78,7 +78,7 @@ const currentView = shallowRef<Component>(Login)
 // --- Configuración del Menú ---
 const menuItems = ref<MenuItem[]>([
   { title: 'Cargar Proyecto', component: AgregarProyecto },
-  { title: 'Proyectos', component: AgregarProyecto }, // Apunta al mismo según tu código anterior
+  { title: 'Proyectos', component: ListaProyectos },
   { title: 'Colaboraciones', component: VerEtapasParaColaborar },
 ]);
 
@@ -134,7 +134,7 @@ onMounted(() => {
         // Quizás quieras vaciar el menú si es auditor
         menuItems.value = [] 
       } else if (roleLower.includes('organizacion')) {
-        currentView.value = AgregarProyecto
+        currentView.value = ListaProyectos
       } else {
         // Default fallback si está logueado pero el rol es raro
         currentView.value = VerEtapasParaColaborar 
