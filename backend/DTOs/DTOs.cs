@@ -286,3 +286,35 @@ public class PropuestaConObservacionesDTO: PropuestaColaboracion
     public IEnumerable<Observacion> Observaciones { get; set;} 
     public string? Proyecto { get; set; }
 }
+public class EstadisticasResponseDTO
+{
+    public List<TopOngDTO> Top3OngsColaboradoras { get; set; } = new();
+    public CategoriaMasPedidaDTO CategoriaMasPedida { get; set; }
+    public double TiempoPromedioDias { get; set; }
+}
+
+public class TopOngDTO
+{
+    public long OrganizacionId { get; set; }
+    public string Nombre { get; set; }
+    public int CantidadColaboraciones { get; set; }
+}
+
+public class CategoriaMasPedidaDTO
+{
+    public string NombreCategoria { get; set; }
+    public int CantidadPedidos { get; set; }
+    public List<TopOngDTO> Top3OngsComprometidas { get; set; } = new();
+}
+
+// DTO para el Login en el Cloud (según el Swagger del Cloud)
+public class CloudLoginDTO
+{
+    public string nombre { get; set; }
+    public string contraseña { get; set; }
+}
+
+public class CloudLoginResponse
+{
+    public string token { get; set; }
+}
