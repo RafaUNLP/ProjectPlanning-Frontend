@@ -5,11 +5,6 @@
 
       <v-toolbar-title>Proyect Planning</v-toolbar-title>
 
-      <template v-if="display.mdAndUp.value && isAuthenticated">
-        <v-btn icon="mdi-magnify" variant="text" />
-        <v-btn icon="mdi-filter" variant="text" />
-      </template>
-
       <v-spacer />
 
       <v-btn
@@ -59,6 +54,7 @@ import AgregarProyecto from './components/AgregarProyecto.vue'
 // import ListaProyectos from './components/ListaProyectos.vue' // (Si lo tuvieras separado)
 import VerEtapasParaColaborar from './components/VerEtapasParaColaborar.vue'
 import MisColaboraciones from './components/MisColaboraciones.vue'
+import PropuestasRecibidas from './components/PropuestasRecibidas.vue'
 
 // --- Tipos ---
 interface MenuItem {
@@ -82,6 +78,7 @@ const menuItems = ref<MenuItem[]>([
   { title: 'Proyectos', component: AgregarProyecto },
   { title: 'Colaborar', component: VerEtapasParaColaborar },
   { title: 'Mis Colaboraciones', component: MisColaboraciones },
+  { title: 'Propuestas Recibidas', component: PropuestasRecibidas },
 ]);
 
 // --- Lógica de Auth y JWT ---

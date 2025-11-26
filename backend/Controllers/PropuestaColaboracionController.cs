@@ -144,8 +144,8 @@ public class PropuestaColaboracionController : ControllerBase
     /// </summary>
     /// <param name="organizacionId">El long de la Organización del cual se quieren ver las propuestas.</param>
     /// <returns>Una lista de Propuestas de Colaboración con sus Etapas asociadas y sus Observaciones.</returns>
-    [HttpGet("organizacion/{organizacionId}")]
-    public async Task<IActionResult> GetPropuestasDeOrganizacion(long organizacionId)
+    [HttpGet("propone/{organizacionId}")]
+    public async Task<IActionResult> GetPropuestasGeneradasOrganizacion(long organizacionId)
     {
         try
         {
@@ -159,7 +159,8 @@ public class PropuestaColaboracionController : ControllerBase
                 EtapaId = p.EtapaId,
                 Etapa = p.Etapa,
                 OrganizacionProponenteId = p.OrganizacionProponenteId,
-                Observaciones =  await _observacionRepository.FilterAsync(obs => obs.ColaboracionId == p.Etapa.ColaboracionId, orderBy: order => order.OrderByDescending(obs => obs.FechaCarga))
+                Observaciones =  await _observacionRepository.FilterAsync(obs => obs.ColaboracionId == p.Etapa.ColaboracionId, orderBy: order => order.OrderByDescending(obs => obs.FechaCarga)),
+                Proyecto = (await _proyectoRepository.GetAsync(p.Etapa.ProyectoId))?.Nombre
             }));
 
             return Ok(propuestas);
@@ -170,6 +171,43 @@ public class PropuestaColaboracionController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Obtiene todas las Propuestas de Colaboración propuestas por una Organización en específico, con sus observaciones.
+    /// </summary>
+    /// <param name="organizacionId">El long de la Organización del cual se quieren ver las propuestas.</param>
+    /// <returns>Una lista de Propuestas de Colaboración con sus Etapas asociadas y sus Observaciones.</returns>
+    [HttpGet("recibe/{organizacionId}")]
+    public async Task<IActionResult> GetPropuestasRecibidasOrganizacion(long organizacionId)
+    {
+        try
+        {
+            //proyectos de organizacion --> etapas No completadas --> propuestas pendientes
+            IEnumerable<Guid> etapas = (await _proyectoRepository.FilterAsync(p => !p.Completado && p.OrganizacionId == organizacionId, orderBy: order => order.OrderByDescending(p => p.Fecha), includes: "Etapas"))
+                                                .SelectMany(p => p.Etapas.Where(e => !e.Completada))
+                                                .Select(e => e.Id);
+            
+
+            IEnumerable<PropuestaColaboracion> propuestas = await _propuestaRepository.FilterAsync(p => etapas.Contains(p.EtapaId), includes:"Etapa");
+
+            var listado = await Task.WhenAll(propuestas.Select(async p => new PropuestaConObservacionesDTO()
+            {
+                Id = p.Id,
+                Descripcion = p.Descripcion,
+                CategoriaColaboracion = p.CategoriaColaboracion,
+                EtapaId = p.EtapaId,
+                Etapa = p.Etapa,
+                OrganizacionProponenteId = p.OrganizacionProponenteId,
+                Observaciones =  await _observacionRepository.FilterAsync(obs => obs.ColaboracionId == p.Etapa.ColaboracionId, orderBy: order => order.OrderByDescending(obs => obs.FechaCarga)),
+                Proyecto = (await _proyectoRepository.GetAsync(p.Etapa.ProyectoId))?.Nombre
+            }));
+
+            return Ok(propuestas);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
 
     /// <summary>
     /// Acepta una Propuesta de Colaboración, creando una Colaboracion
@@ -260,6 +298,14 @@ public class PropuestaColaboracionController : ControllerBase
                 Etapa etapa = propuesta.Etapa;
                 etapa.ColaboracionId = colaboracionOutJson.Id;
                 await _etapaRepository.UpdateAsync(etapa, etapa);
+
+                //rechazo las otras
+                IEnumerable<PropuestaColaboracion> rechazadas = await _propuestaRepository.FilterAsync(p => p.EtapaId == etapa.Id && p.Id != propuesta.Id && p.Estado == EstadoPropuestaColaboracion.Pendiente);
+                foreach (PropuestaColaboracion prop in rechazadas)
+                {
+                    prop.Estado = EstadoPropuestaColaboracion.Rechazada;
+                    await _propuestaRepository.UpdateAsync(prop,prop);
+                }
 
                 return Ok(colaboracionOutJson);
             }

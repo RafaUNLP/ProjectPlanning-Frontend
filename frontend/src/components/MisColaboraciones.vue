@@ -64,7 +64,7 @@
 
           <v-card-text>
             <p class="text-body-1 mb-2"><strong>Mi propuesta:</strong> {{ propuesta.descripcion }}</p>
-            <p class="text-caption text-grey">Proyecto asociado: {{ propuesta.etapa?.proyecto?.nombre || 'Cargando...' }}</p>
+            <!--<p class="text-caption text-grey">Proyecto asociado: {{ propuesta.etapa?.proyecto?.nombre || 'Cargando...' }}</p>-->
 
             <!-- SECCIÓN: Solo visible si es ACEPTADA -->
             <div v-if="esAceptada(propuesta)" class="mt-4">
@@ -73,9 +73,9 @@
               <!-- 1. Acción de Completar Etapa -->
               <div class="d-flex align-center justify-space-between bg-grey-lighten-4 pa-3 rounded mb-4">
                 <div>
-                  <div class="text-subtitle-2 font-weight-bold">Estado de la Etapa</div>
+                  <!--<div class="text-subtitle-2 font-weight-bold">Estado de la Etapa</div>-->
                   <div class="text-caption">
-                    {{ estaEtapaCompletada(propuesta) ? 'La etapa ha sido completada.' : 'Pendiente de realización.' }}
+                    {{ estaEtapaCompletada(propuesta) ? 'Estado: La etapa ha sido completada.' : 'Estado: Pendiente de realización.' }}
                   </div>
                 </div>
                 
@@ -159,9 +159,9 @@ import api from '../api'; // Ajusta la ruta según tu estructura
 
 // Ajusta estos valores según tu Enum en C#
 const ESTADOS = {
-  PENDIENTE: 0,
-  ACEPTADA: 1,
-  RECHAZADA: 2
+  PENDIENTE: 1,
+  ACEPTADA: 2,
+  RECHAZADA: 3
 };
 
 export default defineComponent({
@@ -234,7 +234,7 @@ export default defineComponent({
         this.organizacionId = decoded.sub;
 
         // GET PropuestaColaboracion/organizacion/{organizacionId}
-        const response = await api.get(`/PropuestaColaboracion/organizacion/${this.organizacionId}`);
+        const response = await api.get(`/PropuestaColaboracion/propone/${this.organizacionId}`);
         
         if (response && response.data) {
           this.propuestas = response.data;

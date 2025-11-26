@@ -284,4 +284,5 @@ public class ListarProyectosDTO
 public class PropuestaConObservacionesDTO: PropuestaColaboracion
 {
     public IEnumerable<Observacion> Observaciones { get; set;} 
+    public string? Proyecto { get; set; }
 }
