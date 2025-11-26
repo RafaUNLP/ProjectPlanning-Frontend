@@ -2,7 +2,7 @@
   <v-app-bar color="primary" app>
     <v-app-bar-nav-icon v-if="isAuthenticated" @click.stop="$emit('toggle-drawer')" />
 
-    <v-toolbar-title>My files</v-toolbar-title>
+    <v-toolbar-title>HEADER, NO ESTA EN USO (reemplazado por App.vue)</v-toolbar-title>
 
     <template v-if="$vuetify.display.mdAndUp && isAuthenticated">
       <v-btn icon="mdi-magnify" variant="text" />

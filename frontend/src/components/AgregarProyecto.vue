@@ -151,9 +151,10 @@ export default defineComponent({
         if (!userid) return
 
         const resp = await api.get(`/porOrganizacion/${encodeURIComponent(userid)}`)
+        console.log('acaaaaaa',resp)
         if (resp && resp.data) {
-          this.organizacionId = resp.data.id
-          this.proyectos = resp.data.proyectos || []
+          this.organizacionId = userid
+          this.proyectos = resp.data || []
         }
       } catch (error) {
         console.error('Error al cargar organización y proyectos:', error)

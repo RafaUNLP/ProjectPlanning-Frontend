@@ -154,22 +154,22 @@ public class ProyectoController : ControllerBase
             IEnumerable<Proyecto> proyectos = await _proyectoRepository.FilterAsync(p => p.OrganizacionId == userId, orderBy: order => order.OrderByDescending(p => p.Fecha),includes: "Etapas");
 
             var listado = await Task.WhenAll(proyectos.Select(async p => new ListarProyectosDTO()
-        {
-            Id = p.Id,
-            Descripcion = p.Descripcion,
-            Nombre = p.Nombre,
-            OrganizacionId = p.OrganizacionId,
-            Etapas = await Task.WhenAll(p.Etapas.Select(async e => new EtapaConPropuestasDTO()
             {
-                Id = e.Id,
-                Nombre = e.Nombre,
-                RequiereColaboracion = e.RequiereColaboracion,
-                Descripcion = e.Descripcion,
-                FechaInicio = e.FechaInicio,
-                FechaFin = e.FechaFin,
-                Propuestas = await _propuestaRepository.FilterAsync(prop => prop.EtapaId == e.Id)
-            }))
-        }));
+                Id = p.Id,
+                Descripcion = p.Descripcion,
+                Nombre = p.Nombre,
+                OrganizacionId = p.OrganizacionId,
+                Etapas = await Task.WhenAll(p.Etapas.Select(async e => new EtapaConPropuestasDTO()
+                {
+                    Id = e.Id,
+                    Nombre = e.Nombre,
+                    RequiereColaboracion = e.RequiereColaboracion,
+                    Descripcion = e.Descripcion,
+                    FechaInicio = e.FechaInicio,
+                    FechaFin = e.FechaFin,
+                    Propuestas = await _propuestaRepository.FilterAsync(prop => prop.EtapaId == e.Id)
+                }))
+            }));
 
             return Ok(listado);
         }

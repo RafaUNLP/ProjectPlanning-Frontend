@@ -1,16 +1,88 @@
+<template>
+  <v-app>
+    <v-app-bar color="primary" app>
+      <v-app-bar-nav-icon v-if="isAuthenticated" @click="drawer = !drawer" />
+
+      <v-toolbar-title>Proyect Planning</v-toolbar-title>
+
+      <template v-if="display.mdAndUp.value && isAuthenticated">
+        <v-btn icon="mdi-magnify" variant="text" />
+        <v-btn icon="mdi-filter" variant="text" />
+      </template>
+
+      <v-spacer />
+
+      <v-btn
+        v-if="isAuthenticated"
+        prepend-icon="mdi-logout"
+        variant="text"
+        @click="logout"
+      >
+        Cerrar sesión
+      </v-btn>
+    </v-app-bar>
+
+    <v-navigation-drawer v-model="drawer" v-if="isAuthenticated" temporary>
+      <v-list>
+        <v-list-subheader>Menú Principal</v-list-subheader>
+        
+        <v-list-item 
+          v-for="(item, index) in menuItems" 
+          :key="index" 
+          @click="cambiarVista(item.component)"
+          :active="currentView === item.component"
+          color="white"
+          link
+        >
+          <v-list-item-title>{{ item.title }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-main>
+      <v-container fluid>
+        <component :is="currentView" />
+      </v-container>
+    </v-main>
+  </v-app>
+</template>
+
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import AgregarProyecto from './components/AgregarProyecto.vue'
-import Navbar from './components/Navbar.vue'
-import Header from './components/Header.vue'
+import { ref, onMounted, shallowRef } from 'vue'
+import type { Component } from 'vue'
+import { useDisplay } from 'vuetify'
+
+// --- Imports de tus componentes ---
 import Login from './components/Login.vue'
 import Auditoria from './components/Auditoria.vue'
+import AgregarProyecto from './components/AgregarProyecto.vue'
+// import ListaProyectos from './components/ListaProyectos.vue' // (Si lo tuvieras separado)
 import VerEtapasParaColaborar from './components/VerEtapasParaColaborar.vue'
 
+// --- Tipos ---
+interface MenuItem {
+  title: string;
+  component: Component; // Guardamos el componente directo aquí para facilitar
+}
+
+// --- Estado Global ---
+const display = useDisplay()
 const drawer = ref(false)
 const isAuthenticated = ref(false)
 const role = ref('')
 
+// Usamos shallowRef para guardar el COMPONENTE actual. 
+// shallowRef es mejor que ref para componentes porque Vue no intenta hacerlo reactivo profundamente.
+const currentView = shallowRef<Component>(Login) 
+
+// --- Configuración del Menú ---
+const menuItems = ref<MenuItem[]>([
+  { title: 'Cargar Proyecto', component: AgregarProyecto },
+  { title: 'Proyectos', component: AgregarProyecto }, // Apunta al mismo según tu código anterior
+  { title: 'Colaboraciones', component: VerEtapasParaColaborar },
+]);
+
+// --- Lógica de Auth y JWT ---
 function parseJwt(token: string | null) {
   if (!token) return null
   try {
@@ -27,43 +99,53 @@ function parseJwt(token: string | null) {
 }
 
 function extractRoleFromPayload(payload: any) {
-  //TODO
+  // Ajusta esto según cómo venga tu rol en el JWT
+  if (!payload) return ''
+  return payload.role || payload.roles || '' 
 }
 
+function logout() {
+  localStorage.removeItem('token')
+  window.location.reload()
+}
+
+// --- Navegación ---
+function cambiarVista(componente: Component) {
+  currentView.value = componente
+  drawer.value = false // Cierra el menú al seleccionar
+}
+
+// --- Lifecycle ---
 onMounted(() => {
   try {
     const token = localStorage.getItem('token')
-    isAuthenticated.value = !!token
+    
     if (token) {
+      isAuthenticated.value = true
       const payload = parseJwt(token)
       const r = extractRoleFromPayload(payload)
       role.value = r || ''
+
+      // Lógica inicial: ¿Qué mostramos apenas carga?
+      const roleLower = role.value.toLowerCase()
+      
+      if (roleLower.includes('auditor')) {
+        currentView.value = Auditoria
+        // Quizás quieras vaciar el menú si es auditor
+        menuItems.value = [] 
+      } else if (roleLower.includes('organizacion')) {
+        currentView.value = AgregarProyecto
+      } else {
+        // Default fallback si está logueado pero el rol es raro
+        currentView.value = VerEtapasParaColaborar 
+      }
+    } else {
+      isAuthenticated.value = false
+      currentView.value = Login
     }
   } catch (e) {
     isAuthenticated.value = false
-    role.value = ''
+    currentView.value = Login
   }
 })
-
-const currentView = computed(() => {
-  if (!isAuthenticated.value) return Login
-  const r = role.value.toLowerCase()
-  if (r.includes('auditor')) return Auditoria
-  if (r.includes('organizacion')) return AgregarProyecto
-  //Fallback??
-  return AgregarProyecto
-})
 </script>
-
-<template>
-  <v-app>
-    <Header @toggle-drawer="drawer = !drawer" />
-    <Navbar v-if="isAuthenticated" v-model="drawer" />
-    <v-main>
-      <component :is="currentView" />
-    </v-main>
-  </v-app>
-</template>
-
-<style scoped>
-</style>
