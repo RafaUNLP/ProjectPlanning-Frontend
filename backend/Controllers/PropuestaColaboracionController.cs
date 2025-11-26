@@ -18,19 +18,22 @@ public class PropuestaColaboracionController : ControllerBase
     private readonly PropuestaColaboracionRepository _propuestaRepository;
     private readonly EtapaRepository _etapaRepository;
     private readonly ProyectoRepository _proyectoRepository;
+    private readonly ObservacionRepository _observacionRepository;
     // private readonly ColaboracionRepository _colaboracionRepository;
 
     public PropuestaColaboracionController(
         BonitaService bonitaService,
         PropuestaColaboracionRepository propuestaRepository,
         EtapaRepository etapaRepository,
-        ProyectoRepository proyectoRepository)
+        ProyectoRepository proyectoRepository,
+        ObservacionRepository observacionRepository)
         //ColaboracionRepository colaboracionRepository)
     {
         _bonitaService = bonitaService;
         _propuestaRepository = propuestaRepository;
         _etapaRepository = etapaRepository;
         _proyectoRepository = proyectoRepository;
+        _observacionRepository = observacionRepository;
         //_colaboracionRepository = colaboracionRepository;
     }
 
@@ -67,7 +70,7 @@ public class PropuestaColaboracionController : ControllerBase
             BonitaActivityResponse activity;
             try
             {
-                activity = await _bonitaService.GetActivityByCaseIdAndName(caseId.ToString(), "Proponer compromiso con una etapa");
+                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(), "Proponer compromiso con una etapa");
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
@@ -127,6 +130,37 @@ public class PropuestaColaboracionController : ControllerBase
                 filtro: p => p.Etapa.ProyectoId == proyectoId,
                 includes: "Etapa" 
             );
+
+            return Ok(propuestas);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Obtiene todas las Propuestas de Colaboración propuestas por una Organización en específico, con sus observaciones.
+    /// </summary>
+    /// <param name="organizacionId">El long de la Organización del cual se quieren ver las propuestas.</param>
+    /// <returns>Una lista de Propuestas de Colaboración con sus Etapas asociadas y sus Observaciones.</returns>
+    [HttpGet("organizacion/{organizacionId}")]
+    public async Task<IActionResult> GetPropuestasDeOrganizacion(long organizacionId)
+    {
+        try
+        {
+            IEnumerable<PropuestaColaboracion> propuestas = await _propuestaRepository.FilterAsync(p => p.OrganizacionProponenteId == organizacionId, includes:"Etapa");
+
+            var listado = await Task.WhenAll(propuestas.Select(async p => new PropuestaConObservacionesDTO()
+            {
+                Id = p.Id,
+                Descripcion = p.Descripcion,
+                CategoriaColaboracion = p.CategoriaColaboracion,
+                EtapaId = p.EtapaId,
+                Etapa = p.Etapa,
+                OrganizacionProponenteId = p.OrganizacionProponenteId,
+                Observaciones =  await _observacionRepository.FilterAsync(obs => obs.ColaboracionId == p.Etapa.ColaboracionId, orderBy: order => order.OrderByDescending(obs => obs.FechaCarga))
+            }));
 
             return Ok(propuestas);
         }

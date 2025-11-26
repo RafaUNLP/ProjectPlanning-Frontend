@@ -280,3 +280,8 @@ public class ListarProyectosDTO
     public required long OrganizacionId { get; set; }
     public IEnumerable<EtapaConPropuestasDTO> Etapas { get; set; } = [];
 }
+
+public class PropuestaConObservacionesDTO: PropuestaColaboracion
+{
+    public IEnumerable<Observacion> Observaciones { get; set;} 
+}

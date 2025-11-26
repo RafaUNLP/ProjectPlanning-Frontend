@@ -58,6 +58,7 @@ import Auditoria from './components/Auditoria.vue'
 import AgregarProyecto from './components/AgregarProyecto.vue'
 // import ListaProyectos from './components/ListaProyectos.vue' // (Si lo tuvieras separado)
 import VerEtapasParaColaborar from './components/VerEtapasParaColaborar.vue'
+import MisColaboraciones from './components/MisColaboraciones.vue'
 
 // --- Tipos ---
 interface MenuItem {
@@ -78,8 +79,9 @@ const currentView = shallowRef<Component>(Login)
 // --- Configuración del Menú ---
 const menuItems = ref<MenuItem[]>([
   { title: 'Cargar Proyecto', component: AgregarProyecto },
-  { title: 'Proyectos', component: AgregarProyecto }, // Apunta al mismo según tu código anterior
-  { title: 'Colaboraciones', component: VerEtapasParaColaborar },
+  { title: 'Proyectos', component: AgregarProyecto },
+  { title: 'Colaborar', component: VerEtapasParaColaborar },
+  { title: 'Mis Colaboraciones', component: MisColaboraciones },
 ]);
 
 // --- Lógica de Auth y JWT ---

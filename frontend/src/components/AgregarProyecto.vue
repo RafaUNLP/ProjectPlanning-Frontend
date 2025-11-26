@@ -150,7 +150,7 @@ export default defineComponent({
         const userid = payload?.sub || payload?.userid || null
         if (!userid) return
 
-        const resp = await api.get(`/porOrganizacion/${encodeURIComponent(userid)}`)
+        const resp = await api.get(`/Proyecto/porOrganizacion/${encodeURIComponent(userid)}`)
         console.log('acaaaaaa',resp)
         if (resp && resp.data) {
           this.organizacionId = userid
@@ -210,7 +210,7 @@ export default defineComponent({
           }))
         }
 
-        const response = await api.post('/proyecto', payload)
+        const response = await api.post('/Proyecto', payload)
         if (response.status === 200) {
           alert('Proyecto agregado exitosamente');
           // refrescar lista

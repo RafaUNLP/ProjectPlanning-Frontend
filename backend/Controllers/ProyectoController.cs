@@ -23,6 +23,7 @@ public class ProyectoController : ControllerBase
         _proyectoRepository = proyectoRepository;
         _propuestaRepository = propuestaRepository;
         _etapaRepository = etapaRepository;
+        _bonitaService = bonitaService;
     }
 
     [HttpPost]
@@ -155,7 +156,7 @@ public class ProyectoController : ControllerBase
     /// Recupera los proyectos de una organizacion con sus etapas y propuestas .
     /// </summary>
     /// <param name="userId">ID en Bonita del usuario</param>
-    [HttpGet("/porOrganizacion/{userId}")]
+    [HttpGet("porOrganizacion/{userId}")]
     public async Task<IActionResult> RecuperarProyectosPorOrganizacionId(long userId)
     {
         try
