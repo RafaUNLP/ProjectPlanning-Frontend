@@ -113,22 +113,26 @@
           </v-chip>
 
           <v-form ref="formPropuesta">
-            <v-textarea
-              v-model="propuesta.descripcion"
-              label="Descripción de tu propuesta"
-              variant="outlined"
-              rows="3"
-              hint="Describe cómo puedes ayudar en esta etapa"
-              persistent-hint
-              class="mb-2"
-            ></v-textarea>
+            <v-row>
+              <v-col cols="12" md="10">
+                <v-text-field 
+                  v-model="propuesta.descripcion"
+                  label="Detalles de la colaboración" 
+                  dense
+                  style="color: black"
+                />
+              </v-col>
+            </v-row>
 
-            <v-text-field
-              v-model="propuesta.categoriaColaboracion"
-              label="Categoría (ej: Económica, Técnica)"
-              variant="outlined"
-              class="mt-4"
-            ></v-text-field>
+            <v-row>
+              <v-col cols="12" md="10">
+                <v-select
+                  v-model="propuesta.categoriaColaboracion"
+                  :items="opcionesColaboracion"
+                  label="Tipo de colaboración"
+                />
+              </v-col><!-- outlined dense -->
+            </v-row>
           </v-form>
         </v-card-text>
 
@@ -163,7 +167,7 @@ interface Propuesta {
   descripcion: string;
   categoriaColaboracion: string;
   esParcial: boolean;
-  organizacionProponenteId: number | null | string;
+  organizacionProponenteId: number | string | null;
 }
 
 export default defineComponent({
@@ -171,6 +175,8 @@ export default defineComponent({
 
   data() {
     return {
+      opcionesColaboracion: ['Económica', 'Materiales', 'Mano de Obra', 'Otra'],
+      organizacionId: null as number | null,
       proyectos: [] as any[],
       loading: false,
       loadingPropuesta: false, // Loading específico para el botón del modal
@@ -180,15 +186,17 @@ export default defineComponent({
       etapaSeleccionada: null as any,
 
       propuesta: {
+        etapaId: "",
         descripcion: "",
         categoriaColaboracion: "",
         esParcial: false,
-        organizacionProponenteId: null,
+        organizacionProponenteId: null as number | string | null,
       } as Propuesta,
     };
   },
 
   mounted() {
+    this.propuesta.categoriaColaboracion = this.opcionesColaboracion[0] as string;
     this.cargarProyectos();
   },
 
@@ -213,9 +221,10 @@ export default defineComponent({
       this.loading = true;
       this.error = null;
       try {
-        const response = await api.get(`/requierenColaboraciones`)
+        this.organizacionId = (this.parseJwt(localStorage.getItem('token')))?.sub
+        const response = await api.get(`/Proyecto/requierenColaboraciones`)
         if (response && response.data) {
-          this.proyectos = response.data
+          this.proyectos = response.data.filter((p:any) => p.organizacionId != this.organizacionId)//que NO sean de mis proyectos
         }
       } catch (err: any) {
         console.error('Error al cargar propuestas:', err)
@@ -226,22 +235,12 @@ export default defineComponent({
     },
 
     abrirModal(etapa: any, esParcial: boolean) {
-      // Obtenemos el ID de la organización del usuario actual desde el token
-      const token = localStorage.getItem('token');
-      const payload = this.parseJwt(token);
-      const myOrgId = payload?.sub || payload?.userid || null;
-
-      if (!myOrgId) {
-        alert("Error: No se pudo identificar tu organización. Por favor inicia sesión nuevamente.");
-        return;
-      }
-
       this.etapaSeleccionada = etapa;
       this.propuesta = {
         descripcion: "",
-        categoriaColaboracion: "",
+        categoriaColaboracion: this.propuesta.categoriaColaboracion,
         esParcial: esParcial,
-        organizacionProponenteId: myOrgId, 
+        organizacionProponenteId: this.organizacionId, 
       };
       this.showModal = true;
     },
@@ -258,7 +257,7 @@ export default defineComponent({
         etapaId: this.etapaSeleccionada.id,
         organizacionProponenteId: this.propuesta.organizacionProponenteId,
         descripcion: this.propuesta.descripcion,
-        categoriaColaboracion: this.propuesta.categoriaColaboracion,
+        categoriaColaboracion: this.opcionesColaboracion.findIndex(o => o === this.propuesta.categoriaColaboracion),
         esParcial: this.propuesta.esParcial,
       };
 

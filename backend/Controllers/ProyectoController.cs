@@ -111,7 +111,7 @@ public class ProyectoController : ControllerBase
         }
     }
 
-    [HttpGet("/requierenColaboraciones")]
+    [HttpGet("requierenColaboraciones")]
     public async Task<IActionResult> RecuperarProyectoQueRequierenColaboraciones()
     {
         try
