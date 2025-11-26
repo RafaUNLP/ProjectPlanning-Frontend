@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <h1 class="text-h5 text-md-h4 mb-4">Mis Proyectos</h1>
+    <h1 class="text-h5 text-md-h4 mb-4">Agregar Proyecto</h1>
 
     <v-row class="mb-4">
       <v-col cols="12">
@@ -9,45 +9,6 @@
         </v-btn>
       </v-col>
     </v-row>
-
-    <!-- Listado de proyectos -->
-    <v-row v-if="proyectos && proyectos.length">
-      <v-col v-for="p in proyectos" :key="p.id" cols="12">
-        <v-card class="proyecto-card">
-          <v-card-title>
-            <div class="d-flex justify-space-between align-center w-100">
-              <span>{{ p.nombre }}</span>
-              <v-btn
-                icon
-                size="small"
-                @click="toggleProyecto(p.id)"
-                :color="proyectosExpandidos.includes(p.id) ? 'primary' : 'default'"
-              >
-                <v-icon>{{ proyectosExpandidos.includes(p.id) ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-              </v-btn>
-            </div>
-          </v-card-title>
-          
-          <v-card-text>
-            <div>{{ p.descripcion }}</div>
-            <div class="text-caption">Fecha: {{ formatFecha(p.fecha) }}</div>
-          </v-card-text>
-
-          <!-- Etapas y Propuestas de Colaboración -->
-          <v-expand-transition>
-            <div v-if="proyectosExpandidos.includes(p.id)" class="proyecto-detalles pa-4 border-t">
-              <VerPropuestasColaboracion 
-                :proyecto-id="p.id"
-                :etapas="p.etapas || []"
-              />
-            </div>
-          </v-expand-transition>
-        </v-card>
-      </v-col>
-    </v-row>
-    <div v-else>
-      <p>No hay proyectos para esta organización.</p>
-    </div>
 
     <!-- Formulario (toggle) -->
     <div v-if="showForm">
@@ -100,7 +61,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import AgregarEtapa from './AgregarEtapa.vue'
-import VerPropuestasColaboracion from './VerPropuestasColaboracion.vue'
 import api from '../api'
 
 interface EtapaLocal {
@@ -113,20 +73,18 @@ interface EtapaLocal {
 }
 
 export default defineComponent({
-  components: { AgregarEtapa, VerPropuestasColaboracion },
+  components: { AgregarEtapa },
   data() {
     return {
       nombreProyecto: '',
       descripcionProyecto: '',
       etapas: [] as EtapaLocal[],
       organizacionId: '' as string,
-      proyectos: [] as any[],
       showForm: false,
-      proyectosExpandidos: [] as string[],
     }
   },
   mounted() {
-    this.cargarOrganizacionYProyectos()
+    this.cargarOrganizacionId()
   },
   methods: {
     parseJwt(token: string | null) {
@@ -143,37 +101,16 @@ export default defineComponent({
         return null
       }
     },
-    async cargarOrganizacionYProyectos() {
+    async cargarOrganizacionId() {
       try {
         const token = localStorage.getItem('token')
         const payload = this.parseJwt(token)
         const userid = payload?.sub || payload?.userid || null
         if (!userid) return
 
-        const resp = await api.get(`/Proyecto/porOrganizacion/${encodeURIComponent(userid)}`)
-        console.log('acaaaaaa',resp)
-        if (resp && resp.data) {
-          this.organizacionId = userid
-          this.proyectos = resp.data || []
-        }
+        this.organizacionId = userid
       } catch (error) {
-        console.error('Error al cargar organización y proyectos:', error)
-      }
-    },
-    formatFecha(fecha: string | null) {
-      if (!fecha) return ''
-      try {
-        return new Date(fecha).toLocaleDateString('es-AR')
-      } catch (e) {
-        return ''
-      }
-    },
-    toggleProyecto(proyectoId: string) {
-      const index = this.proyectosExpandidos.indexOf(proyectoId)
-      if (index > -1) {
-        this.proyectosExpandidos.splice(index, 1)
-      } else {
-        this.proyectosExpandidos.push(proyectoId)
+        console.error('Error al cargar organización:', error)
       }
     },
     agregarEtapa() {
@@ -213,8 +150,6 @@ export default defineComponent({
         const response = await api.post('/Proyecto', payload)
         if (response.status === 200) {
           alert('Proyecto agregado exitosamente');
-          // refrescar lista
-          this.cargarOrganizacionYProyectos()
           // limpiar formulario
           this.nombreProyecto = ''
           this.descripcionProyecto = ''
