@@ -19,7 +19,7 @@ const vuetify = createVuetify({
         dark: false,
         colors: {
           background: '#EEEEEE', // color general de fondo, grey-lighten-3
-          surface: '#1976D2', // para cards, drawer, etc, blue-darken-1
+          surface: '#3a8bddff', // para cards, drawer, etc, blue-darken-1
           primary: '#1976D2', // blue-darken-1
           secondary: '#5E35B1'// deep-purple-darken-1
         },

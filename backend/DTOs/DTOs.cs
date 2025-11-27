@@ -279,6 +279,7 @@ public class ListarProyectosDTO
     public required string Descripcion { get; set; }
     public required long OrganizacionId { get; set; }
     public IEnumerable<EtapaConPropuestasDTO> Etapas { get; set; } = [];
+    public required bool Completado { get; set; }
 }
 
 public class PropuestaConObservacionesDTO: PropuestaColaboracion

@@ -169,6 +169,7 @@ public class ProyectoController : ControllerBase
                 Descripcion = p.Descripcion,
                 Nombre = p.Nombre,
                 OrganizacionId = p.OrganizacionId,
+                Completado = p.Completado,
                 Etapas = await Task.WhenAll(p.Etapas.Select(async e => new EtapaConPropuestasDTO()
                 {
                     Id = e.Id,
@@ -177,6 +178,7 @@ public class ProyectoController : ControllerBase
                     Descripcion = e.Descripcion,
                     FechaInicio = e.FechaInicio,
                     FechaFin = e.FechaFin,
+                    Completada = e.Completada,
                     Propuestas = await _propuestaRepository.FilterAsync(prop => prop.EtapaId == e.Id)
                 }))
             }));
