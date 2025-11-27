@@ -105,11 +105,11 @@
           
           <v-chip
             class="mb-4"
-            :color="propuesta.esParcial ? 'warning' : 'primary'"
+            :color="'warning'"
             size="small"
             label
           >
-            Tipo: {{ propuesta.esParcial ? "Colaboración Parcial" : "Colaboración Total" }}
+            {{ propuesta.esParcial ? "Colaboración Parcial" : "Colaboración Total" }}
           </v-chip>
 
           <v-form ref="formPropuesta">
@@ -125,14 +125,17 @@
             </v-row>
 
             <v-row>
-              <v-col cols="12" md="10">
-                <v-select
-                  v-model="propuesta.categoriaColaboracion"
-                  :items="opcionesColaboracion"
-                  label="Tipo de colaboración"
-                />
-              </v-col><!-- outlined dense -->
-            </v-row>
+            <div class="mb-4 mt-2">
+              <v-chip
+                color="info"
+                variant="flat"
+                size="default"
+                prepend-icon="mdi-cash-multiple"
+              >
+                Tipo de colaboración requerida: {{ propuesta.categoriaColaboracion }}
+              </v-chip>
+            </div>
+          </v-row>
           </v-form>
         </v-card-text>
 
@@ -175,7 +178,8 @@ export default defineComponent({
 
   data() {
     return {
-      opcionesColaboracion: ['Económica', 'Materiales', 'Mano de Obra', 'Otra'],
+      // Las categorías están 0-indexed, si el backend usa 1-indexed, hay que restar 1 al índice
+      opcionesColaboracion: ['Económica', 'Materiales', 'Mano de Obra', 'Otra'], 
       organizacionId: null as number | null,
       proyectos: [] as any[],
       loading: false,
@@ -196,7 +200,6 @@ export default defineComponent({
   },
 
   mounted() {
-    this.propuesta.categoriaColaboracion = this.opcionesColaboracion[0] as string;
     this.cargarProyectos();
   },
 
@@ -236,9 +239,19 @@ export default defineComponent({
 
     abrirModal(etapa: any, esParcial: boolean) {
       this.etapaSeleccionada = etapa;
+      
+      // Asumimos que etapa.categoriaColaboracion contiene el índice numérico (0, 1, 2, 3...) 
+      // de la categoría de colaboración requerida para esta etapa.
+      const categoriaIndex = etapa.categoriaColaboracion; 
+      
+      // Obtener el string de la categoría. Si el backend usa 1-based (1-4) como tu referencia, 
+      // y nuestro array es 0-based (0-3), restamos 1.
+      // Si ya es 0-based, el índice es correcto. Para ser seguro, asumo que el backend usa el índice del array 0-based.
+      const categoriaString = this.opcionesColaboracion[categoriaIndex] || this.opcionesColaboracion[0] || '';
+
       this.propuesta = {
         descripcion: "",
-        categoriaColaboracion: this.propuesta.categoriaColaboracion,
+        categoriaColaboracion: categoriaString, // Se guarda el STRING para DISPLAY
         esParcial: esParcial,
         organizacionProponenteId: this.organizacionId, 
       };
@@ -246,8 +259,8 @@ export default defineComponent({
     },
 
     async enviarPropuesta() {
-      if (!this.propuesta.descripcion || !this.propuesta.categoriaColaboracion) {
-        alert("Por favor completa todos los campos");
+      if (!this.propuesta.descripcion) {
+        alert("Por favor completa los detalles de la colaboración.");
         return;
       }
 
@@ -257,7 +270,8 @@ export default defineComponent({
         etapaId: this.etapaSeleccionada.id,
         organizacionProponenteId: this.propuesta.organizacionProponenteId,
         descripcion: this.propuesta.descripcion,
-        categoriaColaboracion: this.opcionesColaboracion.findIndex(o => o === this.propuesta.categoriaColaboracion),
+        // ENVIAMOS EL ÍNDICE NUMÉRICO ORIGINAL DE LA ETAPA (que está en etapaSeleccionada)
+        categoriaColaboracion: this.etapaSeleccionada.categoriaColaboracion,
         esParcial: this.propuesta.esParcial,
       };
 
