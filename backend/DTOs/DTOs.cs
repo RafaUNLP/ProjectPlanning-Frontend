@@ -91,6 +91,7 @@ public class EtapaDTO
     /// Descripción adicional sobre la colaboración.
     /// </summary>
     public string? DescripcionColaboracion { get; set; }
+    public CategoriaColaboracion? CategoriaColaboracion { get; set; }
     public Guid? ColaboracionId { get; set; }
     public bool Completada { get; set; } = false;
 }
