@@ -144,7 +144,7 @@ export default defineComponent({
     async cargarPropuestas() {
       try {
         this.cargando = true
-        const response = await api.get(`/propuestacolaboracion/proyecto/${this.proyectoId}`)
+        const response = await api.get(`/PropuestaColaboracion/proyecto/${this.proyectoId}`)
         
         if (response && response.data) {
           // Agrupar propuestas por etapa

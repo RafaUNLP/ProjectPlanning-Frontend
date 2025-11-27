@@ -133,8 +133,8 @@ public class ProyectoController : ControllerBase
                 var etapasConPropuestas = new List<Etapa>();
                 foreach (var etapa in etapasFiltradas)
                 {
-                    var existePropuesta = await _propuestaRepository.Exist(prop => prop.EtapaId == etapa.Id);
-                    if (!existePropuesta)
+                    var existePropuestaAceptada = await _propuestaRepository.Exist(prop => prop.EtapaId == etapa.Id && prop.Estado == EstadoPropuestaColaboracion.Aceptada);
+                    if (!existePropuestaAceptada)
                     {
                         etapasConPropuestas.Add(etapa);
                     }
