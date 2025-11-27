@@ -31,6 +31,9 @@ public class ObservacionController : ControllerBase
             BonitaActivityResponse activity;
             try
             {
+                BonitaActivityResponse desplegarActivity = await _bonitaService.GetActivityByCaseIdAndDisplayName(observacionDTO.CaseId.ToString(),"Desplegar los proyectos");
+                await _bonitaService.CompleteActivityAsync(desplegarActivity.id);
+
                 activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(observacionDTO.CaseId.ToString(),"Realizar observación");
 
                 var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

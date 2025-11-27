@@ -137,16 +137,17 @@ public class AuditoriaController : ControllerBase
                         }).ToList()
                 }).ToList();
                 
-                bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);
+                //bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);
 
-                if (finishedActivity)
-                    return Ok( new
-                        {
-                            caseId,
-                            proyectos = proyectosResponse
-                        });
-                else
-                    return StatusCode(502,"Falló la terminación de la actividad que recupera la colaboraciones en Bonita");
+                
+                //if (finishedActivity)
+                return Ok( new
+                    {
+                        caseId,
+                        proyectos = proyectosResponse
+                    });
+                // else
+                //     return StatusCode(502,"Falló la terminación de la actividad que recupera la colaboraciones en Bonita");
             }
             catch (Exception ex)
             {
@@ -163,8 +164,10 @@ public class AuditoriaController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> TerminarAuditoría(string caseId)
     {
+        BonitaActivityResponse activity;
         try
         {
+            activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(caseId.ToString(),"Desplegar los proyectos");
             var success = await _bonitaService.SetVariableByCase(caseId.ToString(), "terminar", "true", "java.lang.Boolean");
             
             if (!success)
@@ -175,7 +178,7 @@ public class AuditoriaController : ControllerBase
             if (username.IsNullOrEmpty())
                 return NotFound("No se pudo identificar al usuario a partir del token JWT.");
 
-            bool finishedActivity = await _bonitaService.CompleteActivityAsync(caseId);
+            bool finishedActivity = await _bonitaService.CompleteActivityAsync(activity.id);
 
             if (!finishedActivity)
                 return StatusCode(502,"Falló la interacción con Bonita para terminar la auditoría");
