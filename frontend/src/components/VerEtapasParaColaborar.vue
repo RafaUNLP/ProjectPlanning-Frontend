@@ -247,7 +247,7 @@ export default defineComponent({
       // Obtener el string de la categoría. Si el backend usa 1-based (1-4) como tu referencia, 
       // y nuestro array es 0-based (0-3), restamos 1.
       // Si ya es 0-based, el índice es correcto. Para ser seguro, asumo que el backend usa el índice del array 0-based.
-      const categoriaString = this.opcionesColaboracion[categoriaIndex] || this.opcionesColaboracion[0] || '';
+      const categoriaString = this.opcionesColaboracion[categoriaIndex-1] || this.opcionesColaboracion[0] || '';
 
       this.propuesta = {
         descripcion: "",
