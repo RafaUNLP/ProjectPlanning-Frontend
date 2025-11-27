@@ -15,4 +15,6 @@ public class Etapa{
     public required bool RequiereColaboracion { get; set; }
     public Guid? ColaboracionId { get; set; }
     public bool Completada { get; set; } = false;
+    public CategoriaColaboracion? CategoriaColaboracion { get; set; }
+    public string? DescripcionColaboracion { get; set; }
 }

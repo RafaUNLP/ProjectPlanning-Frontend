@@ -59,12 +59,25 @@
       </v-col>
     </v-row>
 
-    <!-- Colaboraciones -->
     <v-row>
+      <v-col cols="12">
+        <v-switch
+          v-model="etapa.requiereColaboracion"
+          label="Requiere colaboración"
+          color="primary"
+          hide-details
+        ></v-switch>
+      </v-col>
+    </v-row>
+
+    <!-- Colaboraciones -->
+    <v-row v-if="etapa.requiereColaboracion">
       <v-col cols="12" md="6">
         <v-select
           v-model="etapa.opcionesElegidas"
-          :items="opcionesColaboracion"
+          :items="colaboracionesParaSelect"
+          item-title="title"
+          item-value="value"
           label="Tipo de colaboración"
         />
       </v-col><!-- outlined dense -->
@@ -74,6 +87,7 @@
           v-model="etapa.descripcionColaboracion"
           label="Detalles de la colaboración"
           auto-grow
+          rows="1"
          /><!-- outlined dense -->
       </v-col>
     </v-row>
@@ -93,7 +107,17 @@ export default defineComponent({
     return {
       menuInicio: false,
       menuFin: false,
-      opcionesColaboracion: ['Económica', 'Materiales', 'Mano de Obra', 'Otra']
+      opcionesColaboracion: {1:'Económica', 2: 'Materiales', 3: 'Mano de Obra', 4: 'Otra'}
+    }
+  },
+  computed: {
+    colaboracionesParaSelect() {
+      return Object.entries(this.opcionesColaboracion).map(([key, value]) => {
+        return {
+          title: value,   
+          value: parseInt(key)
+        }
+      });
     }
   },
   methods: {
