@@ -143,6 +143,7 @@ export default defineComponent({
             FechaInicio: e.fechaInicio,
             FechaFin: e.fechaFin,
             RequiereColaboracion: (e.opcionesElegidas && e.opcionesElegidas.length > 0),
+            CategoriaColaboracion: e.opcionesElegidas,
             DescripcionColaboracion: e.descripcionColaboracion
           }))
         }

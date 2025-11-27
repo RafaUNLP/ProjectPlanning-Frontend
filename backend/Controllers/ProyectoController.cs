@@ -79,7 +79,9 @@ public class ProyectoController : ControllerBase
                     FechaInicio = e.FechaInicio.ToLocalTime(),
                     FechaFin = e.FechaFin.ToLocalTime(),
                     RequiereColaboracion = e.RequiereColaboracion,
-                    Completada = !e.RequiereColaboracion
+                    Completada = !e.RequiereColaboracion,
+                    CategoriaColaboracion = e.CategoriaColaboracion,
+                    DescripcionColaboracion = e.DescripcionColaboracion
                 }).ToList()
             });
 

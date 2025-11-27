@@ -64,7 +64,9 @@
       <v-col cols="12" md="6">
         <v-select
           v-model="etapa.opcionesElegidas"
-          :items="opcionesColaboracion"
+          :items="colaboracionesParaSelect"
+          item-title="title"
+          item-value="value"
           label="Tipo de colaboración"
         />
       </v-col><!-- outlined dense -->
@@ -93,7 +95,17 @@ export default defineComponent({
     return {
       menuInicio: false,
       menuFin: false,
-      opcionesColaboracion: ['Económica', 'Materiales', 'Mano de Obra', 'Otra']
+      opcionesColaboracion: {1:'Económica', 2: 'Materiales', 3: 'Mano de Obra', 4: 'Otra'}
+    }
+  },
+  computed: {
+    colaboracionesParaSelect() {
+      return Object.entries(this.opcionesColaboracion).map(([key, value]) => {
+        return {
+          title: value,   
+          value: parseInt(key)
+        }
+      });
     }
   },
   methods: {
