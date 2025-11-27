@@ -101,7 +101,7 @@ function parseJwt(token: string | null) {
 function extractRoleFromPayload(payload: any) {
   // Ajusta esto según cómo venga tu rol en el JWT
   if (!payload) return ''
-  return payload.role || payload.rol || '' 
+  return payload.rol || ''
 }
 
 function generateTitle(payload: any) {
@@ -127,7 +127,6 @@ function cambiarVista(componente: Component) {
 onMounted(() => {
   try {
     const token = localStorage.getItem('token')
-    
     if (token) {
       isAuthenticated.value = true
       const payload = parseJwt(token)
@@ -137,7 +136,7 @@ onMounted(() => {
 
       // Lógica inicial: ¿Qué mostramos apenas carga?
       const roleLower = role.value.toLowerCase()
-      console.log('rol aca',roleLower)
+      console.log('Rol del usuario:', roleLower)
       if (roleLower.includes('auditor')) {
         currentView.value = Auditoria
         // Quizás quieras vaciar el menú si es auditor

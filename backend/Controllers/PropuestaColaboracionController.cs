@@ -19,7 +19,6 @@ public class PropuestaColaboracionController : ControllerBase
     private readonly EtapaRepository _etapaRepository;
     private readonly ProyectoRepository _proyectoRepository;
     private readonly ObservacionRepository _observacionRepository;
-    // private readonly ColaboracionRepository _colaboracionRepository;
 
     public PropuestaColaboracionController(
         BonitaService bonitaService,
@@ -27,14 +26,12 @@ public class PropuestaColaboracionController : ControllerBase
         EtapaRepository etapaRepository,
         ProyectoRepository proyectoRepository,
         ObservacionRepository observacionRepository)
-        //ColaboracionRepository colaboracionRepository)
     {
         _bonitaService = bonitaService;
         _propuestaRepository = propuestaRepository;
         _etapaRepository = etapaRepository;
         _proyectoRepository = proyectoRepository;
         _observacionRepository = observacionRepository;
-        //_colaboracionRepository = colaboracionRepository;
     }
 
     [HttpPost]
