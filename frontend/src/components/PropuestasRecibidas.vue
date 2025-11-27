@@ -164,12 +164,10 @@ export default defineComponent({
   },
 
   computed: {
-    // Transforma la lista plana en: 
-    // { "Nombre Proyecto": { "GuidEtapa": { nombreEtapa: "...", propuestas: [...] } } }
-    propuestasAgrupadas() {
-      // 1. Filtramos solo las pendientes
+  propuestasAgrupadas() {
+      // Filtramos solo las propuestas pendientes
       const pendientes = this.propuestasRaw.filter(p => p.estado === ESTADOS.PENDIENTE);
-      
+
       const agrupado: Record<string, Record<string, { nombreEtapa: string, propuestas: Propuesta[] }>> = {};
 
       pendientes.forEach(p => {
@@ -245,7 +243,7 @@ export default defineComponent({
       }
 
       this.loadingPropuestaId = propuesta.id;
-      
+
       try {
         // POST /PropuestaColaboracion/aceptar/{propuestaId}
         const res = await api.post(`/PropuestaColaboracion/aceptar/${propuesta.id}`);
@@ -253,33 +251,35 @@ export default defineComponent({
         if (res && res.status === 200) {
           // Lógica de actualización local:
           
-          // 1. Marcar la propuesta actual como ACEPTADA (2)
+          // 1. Marcar la propuesta aceptada como ACEPTADA (2)
           const indexAceptada = this.propuestasRaw.findIndex(p => p.id === propuesta.id);
           if (indexAceptada !== -1) {
             const propuestaAceptada = this.propuestasRaw[indexAceptada];
             if (propuestaAceptada) {
-                propuestaAceptada.estado = ESTADOS.ACEPTADA;
+              propuestaAceptada.estado = ESTADOS.ACEPTADA;
             }
           }
 
           // 2. Marcar el resto de propuestas DE LA MISMA ETAPA como RECHAZADAS (3)
           this.propuestasRaw.forEach(p => {
-             if (p.etapaId === propuesta.etapaId && p.id !== propuesta.id && p.estado === ESTADOS.PENDIENTE) {
-               p.estado = ESTADOS.RECHAZADA;
-             }
+            if (p.etapaId === propuesta.etapaId && p.id !== propuesta.id && p.estado === ESTADOS.PENDIENTE) {
+              p.estado = ESTADOS.RECHAZADA;
+            }
           });
 
-          // Al modificar 'propuestasRaw', la computed 'propuestasAgrupadas' se recalcula sola 
-          // y elimina visualmente todo lo que ya no es Pendiente.
+          // Forzamos la actualización de las agrupaciones
+          // Esto recarga las propuestas agrupadas y elimina las rechazadas de la UI
+          this.propuestasAgrupadas();  // Esta acción asegura que el valor de la computed "propuestasAgrupadas" se recalcule.
+
         }
       } catch (err: any) {
         console.error(err);
         const msg = err.response?.data || err.message || "Error desconocido";
         // Manejo específico del conflicto 409 (ya existe colaboración)
         if (err.response?.status === 409) {
-           alert("Conflicto: " + msg);
+          alert("Conflicto: " + msg);
         } else {
-           alert("Error al aceptar la propuesta: " + msg);
+          alert("Error al aceptar la propuesta: " + msg);
         }
       } finally {
         this.loadingPropuestaId = null;
