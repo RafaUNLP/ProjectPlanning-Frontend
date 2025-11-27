@@ -31,6 +31,15 @@
     <!-- Listado de Proyectos -->
     <div v-if="!loading && proyectos.length > 0">
       <h2 class="text-h6 mb-3 mt-4 text-secondary">Proyectos en Ejecución ({{ proyectos.length }})</h2>
+      <v-btn 
+            color="error" 
+            prepend-icon="mdi-stop-circle-outline"
+            :loading="finalizando"
+            :disabled="!caseId || loading"
+            @click="finalizarAuditoria"
+          >
+            Finalizar
+        </v-btn>
       <v-divider class="mb-4"></v-divider>
 
       <v-expansion-panels variant="popout" class="mb-8">
@@ -139,7 +148,6 @@
                           variant="outlined"
                           density="compact"
                           hide-details
-                          bg-color="white"
                           style="color: black"
                           class="text-caption"
                           append-inner-icon="mdi-send"
@@ -170,19 +178,22 @@
 import { ref, onMounted } from 'vue'
 import api from '../api'
 
+const emit = defineEmits(['volver'])
+
 const proyectos = ref<any[]>([])
 const loading = ref(false)
+const finalizando = ref(false)
 const error = ref('')
 const caseId = ref<string>('')
 const nuevaObservacion = ref<Record<string, string>>({})
 const cargandoObservacion = ref<Record<string, boolean>>({})
+const observacionesAgregadas = ref(false)
 
 onMounted(async () => {
   loading.value = true
   error.value = ''
   try {
     const resp = await api.get('/Auditoria')
-    // El backend retorna { caseId, proyectos }
     if (resp && resp.data) {
       caseId.value = resp.data.caseId
       proyectos.value = resp.data.proyectos || resp.data || []
@@ -194,6 +205,33 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+const finalizarAuditoria = async () => {
+  // LÓGICA SOLICITADA:
+  // Si se cargaron observaciones -> Volver directamente
+  if (observacionesAgregadas.value) {
+    emit('volver') // Emitimos evento para que App.vue cambie la vista
+    return
+  }
+
+  // Si NO se cargaron observaciones -> Llamar al API y luego volver
+  if (!caseId.value) return
+  if (!confirm('No has cargado observaciones. ¿Deseas finalizar la auditoría como correcta?')) return
+
+  finalizando.value = true
+  error.value = ''
+  
+  try {
+    await api.post(`/Auditoria?caseId=${caseId.value}`)
+    alert('Auditoría finalizada con éxito.')
+    emit('volver') // Volver a estadísticas
+  } catch (err: any) {
+    console.error('Error al finalizar auditoría:', err)
+    error.value = err?.response?.data || 'Error al intentar finalizar la auditoría.'
+  } finally {
+    finalizando.value = false
+  }
+}
 
 const agregarObservacion = async (colaboracion: any) => {
   const colabId = colaboracion.id
@@ -213,7 +251,7 @@ const agregarObservacion = async (colaboracion: any) => {
       caseId: caseId.value ? parseInt(caseId.value) : 0
     })
 
-    if (resp.data) {
+    if (resp.data.observacion) {
       // El backend devuelve la observación creada, o a veces envuelto. Ajustar según respuesta real.
       // Asumimos que devuelve el objeto Observacion directamente o dentro de .observacion
       const obsCreada = resp.data.observacion || resp.data;
@@ -224,6 +262,9 @@ const agregarObservacion = async (colaboracion: any) => {
       colaboracion.observaciones.push(obsCreada)
       nuevaObservacion.value[colabId] = ''
       error.value = ''
+      
+      // MARCAMOS QUE SE HA AGREGADO UNA OBSERVACIÓN
+      observacionesAgregadas.value = true
     }
   } catch (err: any) {
     console.error('Error al agregar observación:', err)

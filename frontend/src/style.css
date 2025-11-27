@@ -1,0 +1,36 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* CORRECCIÓN: */
+html {
+  /* Permitimos el scroll vertical normal */
+  overflow-y: auto; 
+  /* Prevenimos el scroll horizontal accidental */
+  overflow-x: hidden; 
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#app {
+  /* Reseteamos los estilos de Vite que causaban problemas */
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  
+  /* Aseguramos que ocupe el ancho completo */
+  width: 100%;
+}

@@ -9,7 +9,6 @@
       </v-col>
     </v-row>
 
-    <!-- Nombre y Descripción -->
     <v-row>
       <v-col cols="12" md="6">
         <v-text-field v-model="etapa.nombre" label="Nombre de la etapa" outlined dense />
@@ -19,41 +18,52 @@
       </v-col>
     </v-row>
 
-    <!-- Fechas -->
     <v-row>
       <v-col cols="12" md="6">
         <v-menu
           v-model="menuInicio"
-          :close-on-content-click="true"
+          :close-on-content-click="false"
           transition="scale-transition"
           offset-y
           min-width="auto"
         >
           <template v-slot:activator="{ props }">
-            <v-text-field v-bind="props" v-model="etapa.fechaInicio" :value="formartearFecha(etapa.fechaInicio)" label="Fecha de Inicio" readonly />
+            <v-text-field 
+              v-bind="props" 
+              :model-value="formartearFecha(etapa.fechaInicio)" 
+              label="Fecha de Inicio" 
+              readonly 
+              append-inner-icon="mdi-calendar"
+            />
           </template>
           <v-date-picker
-            v-model="etapa.fechaInicio"
+            v-model="fechaInicioPicker"
             :allowed-dates="soloFuturas"
-            @update:modelValue="menuInicio = false"
+            color="primary"
           />
         </v-menu>
       </v-col>
       <v-col cols="12" md="6">
         <v-menu
           v-model="menuFin"
-          :close-on-content-click="true"
+          :close-on-content-click="false"
           transition="scale-transition"
           offset-y
           min-width="auto"
         >
           <template v-slot:activator="{ props }">
-            <v-text-field v-bind="props" v-model="etapa.fechaFin" :value="formartearFecha(etapa.fechaFin)" label="Fecha de Fin" readonly />
+            <v-text-field 
+              v-bind="props" 
+              :model-value="formartearFecha(etapa.fechaFin)" 
+              label="Fecha de Fin" 
+              readonly 
+              append-inner-icon="mdi-calendar"
+            />
           </template>
           <v-date-picker
-            v-model="etapa.fechaFin"
+            v-model="fechaFinPicker"
             :allowed-dates="mayorAlInicio"
-            @update:modelValue="menuFin = false"
+            color="primary"
           />
         </v-menu>
       </v-col>
@@ -70,7 +80,6 @@
       </v-col>
     </v-row>
 
-    <!-- Colaboraciones -->
     <v-row v-if="etapa.requiereColaboracion">
       <v-col cols="12" md="6">
         <v-select
@@ -80,7 +89,7 @@
           item-value="value"
           label="Tipo de colaboración"
         />
-      </v-col><!-- outlined dense -->
+      </v-col>
 
       <v-col cols="12" md="6">
         <v-textarea
@@ -88,7 +97,7 @@
           label="Detalles de la colaboración"
           auto-grow
           rows="1"
-         /><!-- outlined dense -->
+         />
       </v-col>
     </v-row>
   </v-container>
@@ -118,6 +127,39 @@ export default defineComponent({
           value: parseInt(key)
         }
       });
+    },
+    // COMPUTED PROPERTIES PARA MANEJAR FECHAS (String <-> Date)
+    fechaInicioPicker: {
+      get(): Date | undefined {
+        if (!this.etapa.fechaInicio) return undefined;
+        // Parseamos manualmente para asegurar zona horaria local (evitar problemas UTC)
+        const [y, m, d] = this.etapa.fechaInicio.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      },
+      set(val: Date) {
+        if (!val) return;
+        // Formateamos a YYYY-MM-DD
+        const year = val.getFullYear();
+        const month = String(val.getMonth() + 1).padStart(2, '0');
+        const day = String(val.getDate()).padStart(2, '0');
+        this.etapa.fechaInicio = `${year}-${month}-${day}`;
+        this.menuInicio = false; // Cerramos el menú al seleccionar
+      }
+    },
+    fechaFinPicker: {
+      get(): Date | undefined {
+        if (!this.etapa.fechaFin) return undefined;
+        const [y, m, d] = this.etapa.fechaFin.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      },
+      set(val: Date) {
+        if (!val) return;
+        const year = val.getFullYear();
+        const month = String(val.getMonth() + 1).padStart(2, '0');
+        const day = String(val.getDate()).padStart(2, '0');
+        this.etapa.fechaFin = `${year}-${month}-${day}`;
+        this.menuFin = false; // Cerramos el menú al seleccionar
+      }
     }
   },
   methods: {
@@ -131,12 +173,22 @@ export default defineComponent({
       return seleccionada >= hoy
     },
     mayorAlInicio(date: unknown): boolean {
+      if (!this.etapa.fechaInicio) return true;
+      
       const seleccionada = new Date(String(date))
-      const inicio = new Date(this.etapa.fechaInicio)
+      
+      // Parseamos la fecha de inicio como Local para comparar manzanas con manzanas
+      const [y, m, d] = this.etapa.fechaInicio.split('-').map(Number);
+      const inicio = new Date(y, m - 1, d);
+      
       return seleccionada > inicio
     },
     formartearFecha(fecha: string | Date){
-      return new Date(fecha).toLocaleDateString('es-AR');
+      if (!fecha) return '';
+      // Aseguramos parseo local para visualización
+      const [y, m, d] = String(fecha).split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      return dateObj.toLocaleDateString('es-AR');
     }
   }
 })
