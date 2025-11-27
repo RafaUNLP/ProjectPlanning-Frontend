@@ -39,7 +39,7 @@
       <v-col 
         v-for="propuesta in propuestasFiltradas" 
         :key="propuesta.id" 
-        cols="12"
+        cols="11"
       >
         <v-card elevation="2" :border="esAceptada(propuesta) ? 'start' : false" :class="claseBorde(propuesta)">
           
@@ -56,7 +56,7 @@
             </v-card-subtitle>
             
             <template v-slot:append>
-              <v-chip size="small" :color="colorIcono(propuesta)" label>
+              <v-chip size="medium<" :color="colorIcono(propuesta)" label>
                 {{ propuesta.esParcial ? 'Parcial' : 'Total' }}
               </v-chip>
             </template>
@@ -119,17 +119,24 @@
                     </v-list-item-subtitle>
 
                     <template v-slot:append>
-                      <v-btn
-                        v-if="!obs.fechaRealizacion"
-                        color="primary"
-                        variant="text"
-                        size="small"
-                        icon="mdi-check"
-                        v-tooltip="'Marcar observación como resuelta'"
-                        :loading="loadingObservacionId === obs.id"
-                        @click="resolverObservacion(obs)"
-                      ></v-btn>
-                    </template>
+                    <v-btn
+                      v-if="!obs.fechaRealizacion"
+                      color="success"
+                      variant="flat"
+                      size="large"
+                      icon
+                      v-tooltip="'Marcar observación como resuelta'"
+                      :loading="loadingObservacionId === obs.id"
+                      @click="resolverObservacion(obs)"
+                    >
+                      <v-icon
+                        class="ma-0" 
+                      >
+                        mdi-check
+                      </v-icon>
+                    </v-btn>
+                  </template>
+
                   </v-list-item>
                 </v-list>
               </div>

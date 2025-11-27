@@ -66,7 +66,7 @@ namespace backend.Controllers
                 }
 
 
-                var appToken = GenerateAppJwt(userId, nombreRol, bonitaSession);
+                var appToken = GenerateAppJwt(userId, loginDTO.Username, nombreRol, bonitaSession);
 
                 return Ok(new { token = appToken });
             }
@@ -76,7 +76,7 @@ namespace backend.Controllers
             }
         }
 
-        private string GenerateAppJwt(string userId, string nombreRol, BonitaSession bonitaSession)
+        private string GenerateAppJwt(string userId, string username, string nombreRol, BonitaSession bonitaSession)
         {
             var jwtKey = _configuration["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey))
@@ -94,7 +94,8 @@ namespace backend.Controllers
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("bonita_token", bonitaSession.BonitaToken),
                 new Claim("bonita_jsession_id", bonitaSession.JSessionId),
-                new Claim("rol", nombreRol)
+                new Claim("rol", nombreRol),
+                new Claim("username",username)
             };
 
             var token = new JwtSecurityToken(

@@ -3,7 +3,7 @@
     <v-app-bar color="primary" app>
       <v-app-bar-nav-icon v-if="isAuthenticated" @click="drawer = !drawer" />
 
-      <v-toolbar-title>Proyect Planning</v-toolbar-title>
+      <v-toolbar-title>{{ pageTitle }}</v-toolbar-title>
 
       <v-spacer />
 
@@ -67,6 +67,7 @@ const display = useDisplay()
 const drawer = ref(false)
 const isAuthenticated = ref(false)
 const role = ref('')
+const pageTitle = ref('Proyect Planning')
 
 // Usamos shallowRef para guardar el COMPONENTE actual. 
 // shallowRef es mejor que ref para componentes porque Vue no intenta hacerlo reactivo profundamente.
@@ -103,6 +104,14 @@ function extractRoleFromPayload(payload: any) {
   return payload.role || payload.rol || '' 
 }
 
+function generateTitle(payload: any) {
+  let username = ''
+  if (payload){
+    username = payload.username || payload.user || payload.Username || ''
+  }
+  return 'Proyect Planning (' + username + ')'
+}
+
 function logout() {
   localStorage.removeItem('token')
   window.location.reload()
@@ -123,6 +132,7 @@ onMounted(() => {
       isAuthenticated.value = true
       const payload = parseJwt(token)
       const r = extractRoleFromPayload(payload)
+      pageTitle.value = generateTitle(payload)
       role.value = r || ''
 
       // Lógica inicial: ¿Qué mostramos apenas carga?

@@ -176,7 +176,8 @@ public class PropuestaColaboracionController : ControllerBase
                     Etapa = p.Etapa,
                     OrganizacionProponenteId = p.OrganizacionProponenteId,
                     Observaciones = observaciones,
-                    Proyecto = proyecto?.Nombre
+                    Proyecto = proyecto?.Nombre,
+                    Estado = p.Estado
                 };
 
                 listado.Add(propuestaDto);
