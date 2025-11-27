@@ -1,41 +1,36 @@
-/* Reset global para compatibilidad con Vuetify */
-
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  
-  /* Puedes dejar o quitar estas variables de color base, 
-     Vuetify aplicará su propio tema de todas formas */
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* IMPORTANTE: 
-   Eliminamos márgenes y definimos altura completa 
-   para evitar barras de desplazamiento dobles.
-*/
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  /* 'overflow: hidden' es la clave: evita que el body tenga scroll, 
-     delegando el scroll al componente v-app / v-main de Vuetify */
-  overflow: hidden; 
+/* CORRECCIÓN: */
+html {
+  /* Permitimos el scroll vertical normal */
+  overflow-y: auto; 
+  /* Prevenimos el scroll horizontal accidental */
+  overflow-x: hidden; 
 }
 
-/* Reseteamos el contenedor de la aplicación */
-#app {
-  width: 100%;
-  height: 100%;
+body {
   margin: 0;
   padding: 0;
-  
-  /* Eliminamos las restricciones de la plantilla de Vite */
-  max-width: none; 
-  display: block; 
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#app {
+  /* Reseteamos los estilos de Vite que causaban problemas */
+  max-width: none;
+  margin: 0;
+  padding: 0;
   text-align: left;
+  
+  /* Aseguramos que ocupe el ancho completo */
+  width: 100%;
 }
