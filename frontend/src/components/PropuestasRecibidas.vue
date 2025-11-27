@@ -91,18 +91,6 @@
                         <p class="text-body-2 mb-3">
                           {{ propuesta.descripcion }}
                         </p>
-                        
-                        <!-- Listado breve de observaciones previas si existen -->
-                         <div v-if="propuesta.observaciones && propuesta.observaciones.length > 0" class="mt-2">
-                           <v-divider class="mb-2"></v-divider>
-                           <div class="text-caption font-weight-bold text-grey-darken-1">Historial de Observaciones:</div>
-                           <ul class="text-caption text-grey ml-4">
-                             <li v-for="obs in propuesta.observaciones.slice(0, 2)" :key="obs.id">
-                               {{ obs.descripcion }} ({{ obs.fechaRealizacion ? 'Resuelta' : 'Pendiente' }})
-                             </li>
-                             <li v-if="propuesta.observaciones.length > 2">... y {{ propuesta.observaciones.length - 2 }} más.</li>
-                           </ul>
-                         </div>
                       </v-card-text>
 
                       <v-divider></v-divider>
