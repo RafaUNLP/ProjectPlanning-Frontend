@@ -66,5 +66,5 @@ backend/Migrations
 *.sln.docstates
 
 /node_modules
-backend/appsettings.Development.json
+/backend/appsettings.Development.json
 
