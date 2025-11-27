@@ -69,7 +69,8 @@ public class ObservacionController : ControllerBase
                 {
                     Id = new Guid(),
                     ColaboracionId = observacionDTO.ColaboracionId,
-                    Descripcion = observacionDTO.Descripcion
+                    Descripcion = observacionDTO.Descripcion,
+                    CaseId = observacionDTO.CaseId.Value
                 });
 
                 return Ok(new
@@ -91,11 +92,11 @@ public class ObservacionController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<IActionResult> ResolverObservacion(ObservacionDTO observacionDTO)
+    public async Task<IActionResult> ResolverObservacion(ResolverObservacionDTO observacionDTO)
     {
         try
         {
-            Observacion? observacion = await _observacionRepository.GetAsync(observacionDTO.Id.Value);
+            Observacion? observacion = await _observacionRepository.GetAsync(observacionDTO.Id);
 
             if (observacion == null)
                 return NotFound("Observacion no encontrada");
@@ -103,7 +104,7 @@ public class ObservacionController : ControllerBase
             BonitaActivityResponse activity;
             try
             {
-                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(observacionDTO.CaseId.ToString(),"Resolver observación");
+                activity = await _bonitaService.GetActivityByCaseIdAndDisplayName(observacion.CaseId.ToString(),"Resolver observación");
 
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
@@ -126,7 +127,7 @@ public class ObservacionController : ControllerBase
                 observacion = await _observacionRepository.UpdateAsync(observacion,observacion);
                 return Ok(new
                 {
-                    caseId = observacionDTO.CaseId,
+                    caseId = observacion.CaseId,
                     observacion = observacion
                 });
             }

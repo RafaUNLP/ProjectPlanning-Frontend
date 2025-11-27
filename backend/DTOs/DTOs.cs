@@ -205,6 +205,11 @@ public class ObservacionDTO
     public bool Realizada {get; set;}
     public long? CaseId { get; set; } 
 }
+
+public class ResolverObservacionDTO
+{
+    public Guid Id { get; set; }
+}
 public class PropuestaColaboracionDTO
 {
     [Required]

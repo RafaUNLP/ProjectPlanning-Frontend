@@ -10,5 +10,6 @@ public class Observacion
     public required Guid ColaboracionId { get; set; }
     [Column(TypeName = "timestamp")] public DateTime FechaCarga { get; set; } = DateTime.Now;
     [Column(TypeName = "timestamp")] public DateTime? FechaRealizacion { get; set; } //será null si no se realizó
+    public long CaseId { get; set; }
     public bool Realizada() => this.FechaRealizacion != null;
 }

@@ -298,9 +298,7 @@ export default defineComponent({
       // Construimos el objeto DTO que espera el endpoint
       const observacionDTO = {
         id: observacion.id,
-        caseId: observacion.caseId, // Asegúrate de que el backend te devuelve el CaseId en el GET inicial
-        descripcion: observacion.descripcion,
-        // Otros campos si fueran requeridos por el DTO, aunque para resolver suelen bastar ID y contexto
+        caseId: observacion.caseId
       };
 
       try {
