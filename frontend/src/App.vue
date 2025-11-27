@@ -36,7 +36,7 @@
 
     <v-main>
       <v-container fluid>
-        <component :is="currentView" />
+        <component :is="currentView" @volver="irAEstadisticas" />
       </v-container>
     </v-main>
   </v-app>
@@ -82,6 +82,10 @@ const menuItems = ref<MenuItem[]>([
   { title: 'Mis Colaboraciones', component: MisColaboraciones },
   { title: 'Propuestas Recibidas', component: PropuestasRecibidas },
 ]);
+
+function irAEstadisticas() {
+  currentView.value = EstadisticasAuditor
+}
 
 // --- Lógica de Auth y JWT ---
 function parseJwt(token: string | null) {

@@ -247,7 +247,7 @@
       <v-card>
         <v-card-title class="text-h5 primary">Confirmación</v-card-title>
         <v-card-text class="py-4">
-          ¿Estás seguro de que deseas **completar** el proyecto "{{ proyectoACompletar?.nombre }}"?
+          ¿Estás seguro de que deseas <b>completar</b> el proyecto "{{ proyectoACompletar?.nombre }}"?
           <br><br>
           Esta acción es final y notificará a los colaboradores.
         </v-card-text>

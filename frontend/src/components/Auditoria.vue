@@ -2,8 +2,21 @@
   <v-container fluid>
     <v-row>
       <v-col cols="12">
-        <h2>Proyectos en ejecución</h2>
-        <v-alert v-if="error" type="error" dense>{{ error }}</v-alert>
+        <div class="d-flex justify-space-between align-center mb-4">
+          <h2>Proyectos en ejecución</h2>
+          
+          <v-btn 
+            color="error" 
+            prepend-icon="mdi-stop-circle-outline"
+            :loading="finalizando"
+            :disabled="!caseId || loading"
+            @click="finalizarAuditoria"
+          >
+            Finalizar
+          </v-btn>
+        </div>
+
+        <v-alert v-if="error" type="error" dense class="mb-4">{{ error }}</v-alert>
         <v-progress-circular v-if="loading" indeterminate color="primary" />
 
         <v-list v-if="!loading && proyectos.length">
@@ -79,19 +92,22 @@
 import { ref, onMounted } from 'vue'
 import api from '../api'
 
+const emit = defineEmits(['volver'])
+
 const proyectos = ref<any[]>([])
 const loading = ref(false)
+const finalizando = ref(false)
 const error = ref('')
 const caseId = ref<string>('')
 const nuevaObservacion = ref<Record<string, string>>({})
 const cargandoObservacion = ref<Record<string, boolean>>({})
+const observacionesAgregadas = ref(false)
 
 onMounted(async () => {
   loading.value = true
   error.value = ''
   try {
     const resp = await api.get('/Auditoria')
-    // El backend retorna { caseId, proyectos }
     if (resp && resp.data) {
       caseId.value = resp.data.caseId
       proyectos.value = resp.data.proyectos || resp.data || []
@@ -103,6 +119,33 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+const finalizarAuditoria = async () => {
+  // LÓGICA SOLICITADA:
+  // Si se cargaron observaciones -> Volver directamente
+  if (observacionesAgregadas.value) {
+    emit('volver') // Emitimos evento para que App.vue cambie la vista
+    return
+  }
+
+  // Si NO se cargaron observaciones -> Llamar al API y luego volver
+  if (!caseId.value) return
+  if (!confirm('No has cargado observaciones. ¿Deseas finalizar la auditoría como correcta?')) return
+
+  finalizando.value = true
+  error.value = ''
+  
+  try {
+    await api.post(`/Auditoria?caseId=${caseId.value}`)
+    alert('Auditoría finalizada con éxito.')
+    emit('volver') // Volver a estadísticas
+  } catch (err: any) {
+    console.error('Error al finalizar auditoría:', err)
+    error.value = err?.response?.data || 'Error al intentar finalizar la auditoría.'
+  } finally {
+    finalizando.value = false
+  }
+}
 
 const agregarObservacion = async (colaboracion: any) => {
   const colabId = colaboracion.id
@@ -123,13 +166,15 @@ const agregarObservacion = async (colaboracion: any) => {
     })
 
     if (resp.data.observacion) {
-      // Agregar la nueva observación a la lista
       if (!colaboracion.observaciones) {
         colaboracion.observaciones = []
       }
       colaboracion.observaciones.push(resp.data.observacion)
       nuevaObservacion.value[colabId] = ''
       error.value = ''
+      
+      // MARCAMOS QUE SE HA AGREGADO UNA OBSERVACIÓN
+      observacionesAgregadas.value = true
     }
   } catch (err: any) {
     console.error('Error al agregar observación:', err)
@@ -141,32 +186,24 @@ const agregarObservacion = async (colaboracion: any) => {
 </script>
 
 <style scoped>
-.w-100 { 
-  width: 100%; 
+/* ... (Tus estilos existentes) ... */
+.w-100 { width: 100%; }
+.observation-item { padding: 8px 0; border-bottom: 1px solid #eee; }
+.observation-item:last-child { border-bottom: none; }
+.text-grey { color: #999; }
+.text-green { color: #4caf50; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+
+/* --- FIX PARA INPUTS INVISIBLES --- */
+:deep(.v-field input),
+:deep(.v-field__input) {
+  color: #000000 !important; /* Texto negro forzado */
+  opacity: 1 !important;
 }
 
-.observation-item {
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.observation-item:last-child {
-  border-bottom: none;
-}
-
-.text-grey {
-  color: #999;
-}
-
-.text-green {
-  color: #4caf50;
-}
-
-.mt-3 {
-  margin-top: 12px;
-}
-
-.mt-4 {
-  margin-top: 16px;
+/* Opcional: Asegurar que el label también se vea bien */
+:deep(.v-label) {
+  color: rgba(0, 0, 0, 0.7) !important;
 }
 </style>
