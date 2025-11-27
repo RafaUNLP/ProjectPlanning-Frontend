@@ -251,26 +251,15 @@ export default defineComponent({
         if (res && res.status === 200) {
           // Lógica de actualización local:
           
-          // 1. Marcar la propuesta aceptada como ACEPTADA (2)
-          const indexAceptada = this.propuestasRaw.findIndex(p => p.id === propuesta.id);
-          if (indexAceptada !== -1) {
-            const propuestaAceptada = this.propuestasRaw[indexAceptada];
-            if (propuestaAceptada) {
-              propuestaAceptada.estado = ESTADOS.ACEPTADA;
+          this.propuestasRaw = this.propuestasRaw.map(p => {
+            if(p.etapaId === propuesta.etapaId) {
+              return {
+                ...p,
+                estado: p.id === propuesta.id ? ESTADOS.ACEPTADA : ESTADOS.RECHAZADA
+              };
             }
-          }
-
-          // 2. Marcar el resto de propuestas DE LA MISMA ETAPA como RECHAZADAS (3)
-          this.propuestasRaw.forEach(p => {
-            if (p.etapaId === propuesta.etapaId && p.id !== propuesta.id && p.estado === ESTADOS.PENDIENTE) {
-              p.estado = ESTADOS.RECHAZADA;
-            }
-          });
-
-          // Forzamos la actualización de las agrupaciones
-          // Esto recarga las propuestas agrupadas y elimina las rechazadas de la UI
-          this.propuestasAgrupadas();  // Esta acción asegura que el valor de la computed "propuestasAgrupadas" se recalcule.
-
+            return p;
+          })
         }
       } catch (err: any) {
         console.error(err);
