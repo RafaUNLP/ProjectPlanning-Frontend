@@ -278,7 +278,7 @@ public class ListarProyectosDTO
     public required string Nombre { get; set; }
     public required string Descripcion { get; set; }
     public required long OrganizacionId { get; set; }
-    public IEnumerable<EtapaConPropuestasDTO> Etapas { get; set; } = [];
+    public List<EtapaConPropuestasDTO> Etapas { get; set; } = [];
     public required bool Completado { get; set; }
 }
 

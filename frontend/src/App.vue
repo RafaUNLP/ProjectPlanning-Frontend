@@ -100,7 +100,7 @@ function parseJwt(token: string | null) {
 function extractRoleFromPayload(payload: any) {
   // Ajusta esto según cómo venga tu rol en el JWT
   if (!payload) return ''
-  return payload.role || payload.roles || '' 
+  return payload.role || payload.rol || '' 
 }
 
 function logout() {
@@ -127,12 +127,12 @@ onMounted(() => {
 
       // Lógica inicial: ¿Qué mostramos apenas carga?
       const roleLower = role.value.toLowerCase()
-      
+      console.log('rol aca',roleLower)
       if (roleLower.includes('auditor')) {
         currentView.value = Auditoria
         // Quizás quieras vaciar el menú si es auditor
         menuItems.value = [] 
-      } else if (roleLower.includes('organizacion')) {
+      } else if (roleLower.includes('organizacion') || roleLower.includes('colaborador')) {
         currentView.value = ListaProyectos
       } else {
         // Default fallback si está logueado pero el rol es raro

@@ -6,6 +6,7 @@ using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Collections.Immutable;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace backend.Controllers;
 
@@ -161,27 +162,49 @@ public class ProyectoController : ControllerBase
     {
         try
         {
-            IEnumerable<Proyecto> proyectos = await _proyectoRepository.FilterAsync(p => p.OrganizacionId == userId, orderBy: order => order.OrderByDescending(p => p.Fecha),includes: "Etapas");
+            // Obtener proyectos
+            IEnumerable<Proyecto> proyectos = await _proyectoRepository.FilterAsync(
+                p => p.OrganizacionId == userId, 
+                orderBy: order => order.OrderByDescending(p => p.Fecha),
+                includes: "Etapas"
+            );
 
-            var listado = await Task.WhenAll(proyectos.Select(async p => new ListarProyectosDTO()
+            // Listado de proyectos
+            var listado = new List<ListarProyectosDTO>();
+
+            foreach (var p in proyectos)
             {
-                Id = p.Id,
-                Descripcion = p.Descripcion,
-                Nombre = p.Nombre,
-                OrganizacionId = p.OrganizacionId,
-                Completado = p.Completado,
-                Etapas = await Task.WhenAll(p.Etapas.Select(async e => new EtapaConPropuestasDTO()
+                // Crear DTO para cada proyecto
+                var proyectoDto = new ListarProyectosDTO
                 {
-                    Id = e.Id,
-                    Nombre = e.Nombre,
-                    RequiereColaboracion = e.RequiereColaboracion,
-                    Descripcion = e.Descripcion,
-                    FechaInicio = e.FechaInicio,
-                    FechaFin = e.FechaFin,
-                    Completada = e.Completada,
-                    Propuestas = await _propuestaRepository.FilterAsync(prop => prop.EtapaId == e.Id)
-                }))
-            }));
+                    Id = p.Id,
+                    Descripcion = p.Descripcion,
+                    Nombre = p.Nombre,
+                    OrganizacionId = p.OrganizacionId,
+                    Completado = p.Completado,
+                    Etapas = new List<EtapaConPropuestasDTO>()
+                };
+
+                // Traer etapas y sus propuestas de manera secuencial
+                foreach (var e in p.Etapas)
+                {
+                    var etapaDto = new EtapaConPropuestasDTO
+                    {
+                        Id = e.Id,
+                        Nombre = e.Nombre,
+                        RequiereColaboracion = e.RequiereColaboracion,
+                        Descripcion = e.Descripcion,
+                        FechaInicio = e.FechaInicio,
+                        FechaFin = e.FechaFin,
+                        Completada = e.Completada,
+                        Propuestas = await _propuestaRepository.FilterAsync(prop => prop.EtapaId == e.Id)
+                    };
+
+                    proyectoDto.Etapas.Add(etapaDto);
+                }
+
+                listado.Add(proyectoDto);
+            }
 
             return Ok(listado);
         }
@@ -190,6 +213,7 @@ public class ProyectoController : ControllerBase
             return StatusCode(500, ex.Message);
         }
     }
+
 
     /// <summary>
     /// Avanza la actividad "Completar etapa" en Bonita para una etapa específica.

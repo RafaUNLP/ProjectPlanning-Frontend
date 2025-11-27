@@ -149,21 +149,40 @@ public class PropuestaColaboracionController : ControllerBase
     {
         try
         {
-            IEnumerable<PropuestaColaboracion> propuestas = await _propuestaRepository.FilterAsync(p => p.OrganizacionProponenteId == organizacionId, includes:"Etapa");
+            // Obtener las propuestas de la organización
+            var propuestas = await _propuestaRepository.FilterAsync(p => p.OrganizacionProponenteId == organizacionId, includes: "Etapa");
 
-            var listado = await Task.WhenAll(propuestas.Select(async p => new PropuestaConObservacionesDTO()
+            var listado = new List<PropuestaConObservacionesDTO>();
+
+            // Procesar cada propuesta de manera secuencial
+            foreach (var p in propuestas)
             {
-                Id = p.Id,
-                Descripcion = p.Descripcion,
-                CategoriaColaboracion = p.CategoriaColaboracion,
-                EtapaId = p.EtapaId,
-                Etapa = p.Etapa,
-                OrganizacionProponenteId = p.OrganizacionProponenteId,
-                Observaciones =  await _observacionRepository.FilterAsync(obs => obs.ColaboracionId == p.Etapa.ColaboracionId, orderBy: order => order.OrderByDescending(obs => obs.FechaCarga)),
-                Proyecto = (await _proyectoRepository.GetAsync(p.Etapa.ProyectoId))?.Nombre
-            }));
+                // Obtener observaciones asociadas a la propuesta
+                var observaciones = await _observacionRepository.FilterAsync(
+                    obs => obs.ColaboracionId == p.Etapa.ColaboracionId,
+                    orderBy: order => order.OrderByDescending(obs => obs.FechaCarga)
+                );
 
-            return Ok(propuestas);
+                // Obtener el nombre del proyecto relacionado con la propuesta
+                var proyecto = await _proyectoRepository.GetAsync(p.Etapa.ProyectoId);
+
+                // Crear el DTO para la propuesta con observaciones y proyecto
+                var propuestaDto = new PropuestaConObservacionesDTO()
+                {
+                    Id = p.Id,
+                    Descripcion = p.Descripcion,
+                    CategoriaColaboracion = p.CategoriaColaboracion,
+                    EtapaId = p.EtapaId,
+                    Etapa = p.Etapa,
+                    OrganizacionProponenteId = p.OrganizacionProponenteId,
+                    Observaciones = observaciones,
+                    Proyecto = proyecto?.Nombre
+                };
+
+                listado.Add(propuestaDto);
+            }
+
+            return Ok(listado);
         }
         catch (Exception ex)
         {
@@ -181,33 +200,57 @@ public class PropuestaColaboracionController : ControllerBase
     {
         try
         {
-            //proyectos de organizacion --> etapas No completadas --> propuestas pendientes
-            IEnumerable<Guid> etapas = (await _proyectoRepository.FilterAsync(p => !p.Completado && p.OrganizacionId == organizacionId, orderBy: order => order.OrderByDescending(p => p.Fecha), includes: "Etapas"))
-                                                .SelectMany(p => p.Etapas.Where(e => !e.Completada))
-                                                .Select(e => e.Id);
-            
+            // Obtener etapas no completadas de la organización
+            var proyectos = await _proyectoRepository.FilterAsync(p => !p.Completado && p.OrganizacionId == organizacionId, 
+                                                                orderBy: order => order.OrderByDescending(p => p.Fecha), 
+                                                                includes: "Etapas");
 
-            IEnumerable<PropuestaColaboracion> propuestas = await _propuestaRepository.FilterAsync(p => etapas.Contains(p.EtapaId), includes:"Etapa");
+            var etapas = proyectos
+                            .SelectMany(p => p.Etapas.Where(e => !e.Completada))
+                            .Select(e => e.Id)
+                            .ToList(); // Convertir a lista para evitar múltiples enumeraciones
 
-            var listado = await Task.WhenAll(propuestas.Select(async p => new PropuestaConObservacionesDTO()
+            // Obtener propuestas correspondientes a las etapas
+            var propuestas = await _propuestaRepository.FilterAsync(p => etapas.Contains(p.EtapaId), includes: "Etapa");
+
+            var listado = new List<PropuestaConObservacionesDTO>();
+
+            // Procesar las propuestas secuencialmente
+            foreach (var p in propuestas)
             {
-                Id = p.Id,
-                Descripcion = p.Descripcion,
-                CategoriaColaboracion = p.CategoriaColaboracion,
-                EtapaId = p.EtapaId,
-                Etapa = p.Etapa,
-                OrganizacionProponenteId = p.OrganizacionProponenteId,
-                Observaciones =  await _observacionRepository.FilterAsync(obs => obs.ColaboracionId == p.Etapa.ColaboracionId, orderBy: order => order.OrderByDescending(obs => obs.FechaCarga)),
-                Proyecto = (await _proyectoRepository.GetAsync(p.Etapa.ProyectoId))?.Nombre
-            }));
+                // Obtener observaciones de cada propuesta
+                var observaciones = await _observacionRepository.FilterAsync(
+                    obs => obs.ColaboracionId == p.Etapa.ColaboracionId, 
+                    orderBy: order => order.OrderByDescending(obs => obs.FechaCarga)
+                );
 
-            return Ok(propuestas);
+                // Obtener el nombre del proyecto asociado a la propuesta
+                var proyecto = await _proyectoRepository.GetAsync(p.Etapa.ProyectoId);
+
+                // Crear el DTO de la propuesta con observaciones y proyecto
+                var propuestaDto = new PropuestaConObservacionesDTO()
+                {
+                    Id = p.Id,
+                    Descripcion = p.Descripcion,
+                    CategoriaColaboracion = p.CategoriaColaboracion,
+                    EtapaId = p.EtapaId,
+                    Etapa = p.Etapa,
+                    OrganizacionProponenteId = p.OrganizacionProponenteId,
+                    Observaciones = observaciones,
+                    Proyecto = proyecto?.Nombre
+                };
+
+                listado.Add(propuestaDto);
+            }
+
+            return Ok(listado);
         }
         catch (Exception ex)
         {
             return StatusCode(500, ex.Message);
         }
     }
+
 
     /// <summary>
     /// Acepta una Propuesta de Colaboración, creando una Colaboracion
