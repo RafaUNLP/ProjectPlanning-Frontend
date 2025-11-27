@@ -103,35 +103,82 @@
                       {{ obtenerRangoFechas(etapa.fechaInicio, etapa.fechaFin) }}
                     </p>
 
-                    <!-- Propuestas (Mini-lista) -->
+                    <!-- Propuestas -->
                     <div v-if="etapa.propuestas && etapa.propuestas.length > 0" class="mt-2 pt-2 border-t">
                       <div class="font-weight-bold text-caption mb-1">Propuestas ({{ etapa.propuestas.length }}):</div>
+                      
                       <v-list density="compact" class="bg-transparent">
                         <v-list-item
                           v-for="propuesta in etapa.propuestas.slice(0, 3)"
                           :key="propuesta.id"
-                          class="pa-0 mb-1"
-                          :title="propuesta.descripcion"
-                          lines="one"
+                          class="pa-0 mb-3"
                         >
-                          <template v-slot:prepend>
-                            <v-icon :color="colorPropuesta(propuesta)" size="small" class="mr-1">
-                              {{ iconoPropuesta(propuesta) }}
-                            </v-icon>
-                          </template>
-                          <template v-slot:append>
-                            <v-chip size="x-small" :color="colorPropuesta(propuesta)">
+                          <!-- Cabecera de la propuesta -->
+                          <div class="d-flex align-center justify-space-between">
+                            <div class="d-flex align-center text-truncate">
+                               <v-icon :color="colorPropuesta(propuesta)" size="small" class="mr-1">
+                                {{ iconoPropuesta(propuesta) }}
+                              </v-icon>
+                              <span class="text-body-2 font-weight-medium">{{ propuesta.descripcion }}</span>
+                            </div>
+                            <v-chip size="x-small" :color="colorPropuesta(propuesta)" label class="ml-2">
                               {{ estadoPropuesta(propuesta.estado) }}
                             </v-chip>
-                          </template>
+                          </div>
+
+                          <!-- LISTADO DE OBSERVACIONES (Solo si es Aceptada) -->
+                          <div v-if="propuesta.estado === ESTADOS_PROPUESTA.ACEPTADA && propuesta.observaciones && propuesta.observaciones.length > 0" class="mt-2 pl-2 border-s-sm">
+                            <div class="text-caption font-weight-bold text-grey-darken-2 mb-1">Observaciones / Requerimientos:</div>
+                             <v-list density="compact" class="bg-transparent pa-0">
+                                <v-list-item
+                                  v-for="obs in propuesta.observaciones"
+                                  :key="obs.id"
+                                  class="mb-1 border rounded bg-white pa-2"
+                                  min-height="auto"
+                                >
+                                  <div class="d-flex align-start">
+                                    <v-icon 
+                                      :icon="obs.fechaRealizacion ? 'mdi-check-circle' : 'mdi-alert-circle-outline'"
+                                      :color="obs.fechaRealizacion ? 'success' : 'warning'"
+                                      size="small"
+                                      class="mr-2 mt-1"
+                                    ></v-icon>
+                                    
+                                    <div class="flex-grow-1">
+                                      <div class="text-caption font-weight-bold text-wrap" style="line-height: 1.2;">
+                                        {{ obs.descripcion }}
+                                      </div>
+                                      <div class="text-caption text-grey" style="font-size: 0.7rem !important;">
+                                        {{ obs.fechaRealizacion ? 'Resuelta el ' + formatearFecha(obs.fechaRealizacion) : 'Pendiente de resolución' }}
+                                      </div>
+                                    </div>
+
+                                    <!-- Botón Resolver (si está pendiente) -->
+                                    <!--
+                                    <v-btn
+                                      v-if="!obs.fechaRealizacion"
+                                      color="primary"
+                                      variant="text"
+                                      size="x-small"
+                                      icon="mdi-check"
+                                      class="ml-1"
+                                      v-tooltip="'Marcar como resuelta'"
+                                      :loading="loadingObservacionId === obs.id"
+                                      @click.stop="resolverObservacion(obs)"
+                                    ></v-btn>-->
+                                  </div>
+                                </v-list-item>
+                             </v-list>
+                          </div>
                         </v-list-item>
+
                         <v-list-item v-if="etapa.propuestas.length > 3" class="pa-0 text-caption text-center text-grey">
-                          ... y {{ etapa.propuestas.length - 3 }} más.
+                          ... y {{ etapa.propuestas.length - 3 }} propuestas más.
                         </v-list-item>
                       </v-list>
                     </div>
                     <div v-else class="mt-2 text-caption text-grey font-italic">
-                        Sin propuestas.
+                        Sin propuestas registradas.
                     </div>
 
                   </v-card-text>
@@ -158,17 +205,11 @@
             <v-chip size="small" color="success" label>Completado</v-chip>
           </v-expansion-panel-title>
 
-          <!--<v-expansion-panel-text class="pa-4 bg-white">
-             <p class="text-body-2 text-medium-emphasis mb-4">{{ proyecto.descripcion }}</p>
-             <
-             <div class="text-caption text-grey-darken-1">Este proyecto ha sido completado exitosamente.</div>
-          </v-expansion-panel-text>-->
           <v-expansion-panel-text class="pa-4 bg-grey-lighten-4">
             <p class="text-body-2 text-medium-emphasis mb-4">{{ proyecto.descripcion }}</p>
 
             <h3 class="text-subtitle-1 font-weight-bold mb-3">Etapas del Proyecto:</h3>
             
-            <!-- Listado de Etapas (Cards) -->
             <v-row dense>
               <v-col 
                 v-for="etapa in proyecto.etapas" 
@@ -178,18 +219,13 @@
               >
                 <v-card 
                   elevation="1" 
-                  :border="etapa.completada ? 'start success' : 'start grey-lighten-1'"
-                  class="h-100 pa-3"
-                  :class="{'bg-green-lighten-5': etapa.completada}"
+                  border="start success"
+                  class="h-100 pa-3 bg-green-lighten-5"
                 >
                   <v-card-title class="text-subtitle-2 font-weight-bold d-flex align-center pa-0">
-                    <v-icon :icon="etapa.completada ? 'mdi-check-circle' : 'mdi-circle-half-full'" 
-                            :color="etapa.completada ? 'success' : 'grey-darken-1'" 
-                            size="small" 
-                            class="mr-2"></v-icon>
+                    <v-icon icon="mdi-check-circle" color="success" size="small" class="mr-2"></v-icon>
                     {{ etapa.nombre }}
-                    <v-chip v-if="etapa.completada" size="x-small" color="success" class="ml-2" label>Completada</v-chip>
-                    <v-chip v-else size="x-small" color="warning" class="ml-2" label>Pendiente</v-chip>
+                    <v-chip size="x-small" color="success" class="ml-2" label>Completada</v-chip>
                   </v-card-title>
                   
                   <v-card-text class="text-caption text-medium-emphasis pa-0 pt-2">
@@ -197,38 +233,6 @@
                     <p class="text-caption text-grey-darken-1">
                       {{ obtenerRangoFechas(etapa.fechaInicio, etapa.fechaFin) }}
                     </p>
-
-                    <!-- Propuestas (Mini-lista) -->
-                    <div v-if="etapa.propuestas && etapa.propuestas.length > 0" class="mt-2 pt-2 border-t">
-                      <div class="font-weight-bold text-caption mb-1">Propuestas ({{ etapa.propuestas.length }}):</div>
-                      <v-list density="compact" class="bg-transparent">
-                        <v-list-item
-                          v-for="propuesta in etapa.propuestas.slice(0, 3)"
-                          :key="propuesta.id"
-                          class="pa-0 mb-1"
-                          :title="propuesta.descripcion"
-                          lines="one"
-                        >
-                          <template v-slot:prepend>
-                            <v-icon :color="colorPropuesta(propuesta)" size="small" class="mr-1">
-                              {{ iconoPropuesta(propuesta) }}
-                            </v-icon>
-                          </template>
-                          <template v-slot:append>
-                            <v-chip size="x-small" :color="colorPropuesta(propuesta)">
-                              {{ estadoPropuesta(propuesta.estado) }}
-                            </v-chip>
-                          </template>
-                        </v-list-item>
-                        <v-list-item v-if="etapa.propuestas.length > 3" class="pa-0 text-caption text-center text-grey">
-                          ... y {{ etapa.propuestas.length - 3 }} más.
-                        </v-list-item>
-                      </v-list>
-                    </div>
-                    <div v-else class="mt-2 text-caption text-grey font-italic">
-                        Sin propuestas.
-                    </div>
-
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -243,7 +247,7 @@
       <v-card>
         <v-card-title class="text-h5 primary">Confirmación</v-card-title>
         <v-card-text class="py-4">
-          ¿Estás seguro de que deseas completar el proyecto "{{ proyectoACompletar?.nombre }}"?
+          ¿Estás seguro de que deseas **completar** el proyecto "{{ proyectoACompletar?.nombre }}"?
           <br><br>
           Esta acción es final y notificará a los colaboradores.
         </v-card-text>
@@ -285,12 +289,21 @@ const ESTADOS_PROPUESTA = {
   EJECUCION: 4
 };
 
+interface Observacion {
+  id: string;
+  descripcion: string;
+  fechaRealizacion?: string; // Puede ser null
+  caseId?: string; // Necesario para resolver
+  colaboracionId: string;
+}
+
 interface Propuesta {
   id: string;
   descripcion: string;
   categoriaColaboracion: number; // enum index
   esParcial: boolean;
   estado: number; // ESTADOS_PROPUESTA
+  observaciones?: Observacion[]; // Nueva propiedad
 }
 
 interface Etapa {
@@ -320,15 +333,19 @@ export default defineComponent({
 
   data() {
     return {
+      ESTADOS_PROPUESTA,
       proyectos: [] as Proyecto[],
       loading: false,
       error: null as string | null,
       organizacionId: null as number | null,
       
-      // Control de estado para la acción de completar
+      // Control de estado para la acción de completar proyecto
       loadingProyectoId: null as string | null,
       showConfirmModal: false,
       proyectoACompletar: null as Proyecto | null,
+
+      // Control de estado para resolver observación
+      loadingObservacionId: null as string | null,
     };
   },
 
@@ -445,6 +462,34 @@ export default defineComponent({
       }
     },
 
+    // 3. Lógica para resolver observación (copiada y adaptada del ejemplo)
+    async resolverObservacion(observacion: Observacion) {
+      this.loadingObservacionId = observacion.id;
+      
+      // Construimos el objeto DTO que espera el endpoint
+      const observacionDTO = {
+        id: observacion.id,
+        // caseId: observacion.caseId, // Si el backend lo requiere, asegúrate de que venga en el GET inicial
+        descripcion: observacion.descripcion,
+        colaboracionId: observacion.colaboracionId
+      };
+
+      try {
+        // PUT /Observacion
+        const res = await api.put(`/Observacion`, observacionDTO);
+
+        if (res.status === 200) {
+          // Actualización local
+          observacion.fechaRealizacion = new Date().toISOString();
+        }
+      } catch (err: any) {
+        console.error(err);
+        alert("Error al resolver la observación: " + (err.response?.data || err.message));
+      } finally {
+        this.loadingObservacionId = null;
+      }
+    },
+
     // --- UTILIDADES VISUALES ---
 
     calcularProgreso(proyecto: Proyecto): number {
@@ -458,6 +503,11 @@ export default defineComponent({
       const fInicio = new Date(inicio).toLocaleDateString();
       const fFin = new Date(fin).toLocaleDateString();
       return `Desde ${fInicio} hasta ${fFin}`;
+    },
+
+    formatearFecha(fecha: string) {
+      if (!fecha) return '';
+      return new Date(fecha).toLocaleDateString();
     },
     
     estadoPropuesta(estado: number): string {
@@ -506,6 +556,4 @@ export default defineComponent({
   background-color: transparent !important;
   color: inherit !important;
 }
-
-
 </style>

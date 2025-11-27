@@ -135,6 +135,13 @@ export default defineComponent({
           return
         }
 
+        const opcionesColaboracionMap: Record<string, number> = {
+          'Económica': 1,
+          'Materiales': 2,
+          'Mano de Obra': 3,
+          'Otra': 4
+        };
+
         const payload = {
           Nombre: this.nombreProyecto,
           Descripcion: this.descripcionProyecto,
@@ -145,7 +152,9 @@ export default defineComponent({
             FechaInicio: e.fechaInicio,
             FechaFin: e.fechaFin,
             RequiereColaboracion: e.requiereColaboracion,
-            CategoriaColaboracion: e.requiereColaboracion ? e.opcionesElegidas : null,
+            CategoriaColaboracion: e.requiereColaboracion && e.opcionesElegidas[0]
+              ? opcionesColaboracionMap[e.opcionesElegidas[0]]
+              : null,
             DescripcionColaboracion: e.requiereColaboracion ? e.descripcionColaboracion : null
           }))
         }

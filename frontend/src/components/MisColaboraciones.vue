@@ -83,6 +83,7 @@
                   v-if="!estaEtapaCompletada(propuesta)"
                   color="success"
                   size="small"
+                  v-tooltip="'Marcar como resuelta'"
                   prepend-icon="mdi-check-all"
                   :loading="loadingEtapaId === propuesta.etapaId"
                   @click="completarEtapa(propuesta)"

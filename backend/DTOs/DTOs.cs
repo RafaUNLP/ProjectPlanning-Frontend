@@ -271,7 +271,7 @@ public class BonitaRoleResponse
 
 public class EtapaConPropuestasDTO: EtapaDTO
 {
-    public IEnumerable<PropuestaColaboracion> Propuestas { get; set; }
+    public IEnumerable<PropuestaConObservacionesDTO> Propuestas { get; set; }
 }
 public class ListarProyectosDTO
 {

@@ -18,12 +18,15 @@ public class ProyectoController : ControllerBase
     private readonly ProyectoRepository _proyectoRepository;
     private readonly PropuestaColaboracionRepository _propuestaRepository;
     private readonly EtapaRepository _etapaRepository;
+    private readonly ObservacionRepository _observacionRepository;
     private readonly BonitaService _bonitaService;
-    public ProyectoController(ProyectoRepository proyectoRepository, PropuestaColaboracionRepository propuestaRepository, EtapaRepository etapaRepository , BonitaService bonitaService)
+    public ProyectoController(ProyectoRepository proyectoRepository, PropuestaColaboracionRepository propuestaRepository, 
+            ObservacionRepository observacionRepository, EtapaRepository etapaRepository, BonitaService bonitaService)
     {
         _proyectoRepository = proyectoRepository;
         _propuestaRepository = propuestaRepository;
         _etapaRepository = etapaRepository;
+        _observacionRepository = observacionRepository;
         _bonitaService = bonitaService;
     }
 
@@ -187,9 +190,36 @@ public class ProyectoController : ControllerBase
                     Etapas = new List<EtapaConPropuestasDTO>()
                 };
 
-                // Traer etapas y sus propuestas de manera secuencial
+                List<PropuestaColaboracion> propuestas;
+                List<Observacion> observaciones;
+                
+                // Traer etapas, sus propuestas y las observaciones (solo busco las de las aceptadas)
                 foreach (var e in p.Etapas)
                 {
+                    List<PropuestaConObservacionesDTO> propuestaDTO = [];
+                    propuestas = (await _propuestaRepository.FilterAsync(prop => prop.EtapaId == e.Id,includes:"Etapa")).ToList();
+                    foreach (PropuestaColaboracion prop in propuestas)
+                    {
+                        if(prop.Estado == EstadoPropuestaColaboracion.Aceptada)
+                            observaciones = (await _observacionRepository.FilterAsync(o => prop.Etapa.ColaboracionId != null && o.ColaboracionId == prop.Etapa.ColaboracionId)).ToList();
+                        else
+                            observaciones = [];
+
+                        propuestaDTO.Add(new PropuestaConObservacionesDTO
+                        {
+                            Id = prop.Id,
+                            CategoriaColaboracion = prop.CategoriaColaboracion,
+                            Descripcion = prop.Descripcion,
+                            EtapaId = prop.EtapaId,
+                            Etapa = prop.Etapa,
+                            OrganizacionProponenteId = prop.OrganizacionProponenteId,
+                            EsParcial = prop.EsParcial,
+                            Estado = prop.Estado,
+                            Observaciones = observaciones,
+                            Proyecto = p.Nombre
+                        });
+                    }
+
                     var etapaDto = new EtapaConPropuestasDTO
                     {
                         Id = e.Id,
@@ -199,7 +229,7 @@ public class ProyectoController : ControllerBase
                         FechaInicio = e.FechaInicio,
                         FechaFin = e.FechaFin,
                         Completada = e.Completada,
-                        Propuestas = await _propuestaRepository.FilterAsync(prop => prop.EtapaId == e.Id)
+                        Propuestas = propuestaDTO
                     };
 
                     proyectoDto.Etapas.Add(etapaDto);
