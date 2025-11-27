@@ -50,6 +50,7 @@ import { useDisplay } from 'vuetify'
 // --- Imports de tus componentes ---
 import Login from './components/Login.vue'
 import Auditoria from './components/Auditoria.vue'
+import EstadisticasAuditor from './components/EstadisticasAuditor.vue'
 import AgregarProyecto from './components/AgregarProyecto.vue'
 import ListaProyectos from './components/ListaProyectos.vue'
 import VerEtapasParaColaborar from './components/VerEtapasParaColaborar.vue'
@@ -138,8 +139,11 @@ onMounted(() => {
       const roleLower = role.value.toLowerCase()
       console.log('Rol del usuario:', roleLower)
       if (roleLower.includes('auditor')) {
-        currentView.value = Auditoria
-        menuItems.value = [{ title: 'Proyectos en ejecución', component: Auditoria },] 
+        currentView.value = EstadisticasAuditor
+        menuItems.value = [
+          { title: 'Estadísticas', component: EstadisticasAuditor },
+          { title: 'Proyectos en Ejecución', component: Auditoria }
+        ]
       } else if (roleLower.includes('organizacion') || roleLower.includes('colaborador')) {
         currentView.value = ListaProyectos
       } else {
