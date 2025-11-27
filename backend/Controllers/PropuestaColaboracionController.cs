@@ -172,6 +172,7 @@ public class PropuestaColaboracionController : ControllerBase
                     EtapaId = p.EtapaId,
                     Etapa = p.Etapa,
                     OrganizacionProponenteId = p.OrganizacionProponenteId,
+                    Estado = p.Estado,
                     Observaciones = observaciones,
                     Proyecto = proyecto?.Nombre
                 };
@@ -233,6 +234,7 @@ public class PropuestaColaboracionController : ControllerBase
                     EtapaId = p.EtapaId,
                     Etapa = p.Etapa,
                     OrganizacionProponenteId = p.OrganizacionProponenteId,
+                    Estado = p.Estado,
                     Observaciones = observaciones,
                     Proyecto = proyecto?.Nombre
                 };

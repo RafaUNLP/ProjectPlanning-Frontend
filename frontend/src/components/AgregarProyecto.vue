@@ -68,6 +68,7 @@ interface EtapaLocal {
   descripcion: string
   fechaInicio: string
   fechaFin: string
+  requiereColaboracion: boolean
   opcionesElegidas: string[]
   descripcionColaboracion: string
 }
@@ -119,6 +120,7 @@ export default defineComponent({
         descripcion: '',
         fechaInicio: new Date().toISOString().substring(0, 10),
         fechaFin: '',
+        requiereColaboracion: false,
         opcionesElegidas: ['Económica'],
         descripcionColaboracion: '',
       })
@@ -142,9 +144,9 @@ export default defineComponent({
             Descripcion: e.descripcion,
             FechaInicio: e.fechaInicio,
             FechaFin: e.fechaFin,
-            RequiereColaboracion: (e.opcionesElegidas && e.opcionesElegidas.length > 0),
-            CategoriaColaboracion: e.opcionesElegidas,
-            DescripcionColaboracion: e.descripcionColaboracion
+            RequiereColaboracion: e.requiereColaboracion,
+            CategoriaColaboracion: e.requiereColaboracion ? e.opcionesElegidas : null,
+            DescripcionColaboracion: e.requiereColaboracion ? e.descripcionColaboracion : null
           }))
         }
 

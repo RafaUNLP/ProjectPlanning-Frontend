@@ -59,8 +59,19 @@
       </v-col>
     </v-row>
 
-    <!-- Colaboraciones -->
     <v-row>
+      <v-col cols="12">
+        <v-switch
+          v-model="etapa.requiereColaboracion"
+          label="Requiere colaboración"
+          color="primary"
+          hide-details
+        ></v-switch>
+      </v-col>
+    </v-row>
+
+    <!-- Colaboraciones -->
+    <v-row v-if="etapa.requiereColaboracion">
       <v-col cols="12" md="6">
         <v-select
           v-model="etapa.opcionesElegidas"
@@ -76,6 +87,7 @@
           v-model="etapa.descripcionColaboracion"
           label="Detalles de la colaboración"
           auto-grow
+          rows="1"
          /><!-- outlined dense -->
       </v-col>
     </v-row>
